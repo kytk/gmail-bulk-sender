@@ -34,8 +34,7 @@ class GmailBulkSender:
         with open(csv_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                # CSVのカラム名に応じて調整してください
-                # 例: '氏名', 'メールアドレス' または 'name', 'email'
+                # CSVのカラム名に応じて調整
                 name_key = '氏名' if '氏名' in row else 'name'
                 email_key = 'メールアドレス' if 'メールアドレス' in row else 'email'
                 
@@ -45,20 +44,32 @@ class GmailBulkSender:
                 })
         return recipients
     
-    def read_body_template(self, body_file):
+    def read_email_template(self, template_file):
         """
-        メール本文テンプレートを読み込む
+        メールテンプレートを読み込む（件名と本文を分離）
         
         Args:
-            body_file: 本文テンプレートファイルのパス
+            template_file: テンプレートファイルのパス
             
         Returns:
-            本文テンプレート文字列
+            (subject, body) のタプル
         """
-        with open(body_file, 'r', encoding='utf-8') as f:
-            return f.read()
+        with open(template_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 件名と本文を分離（最初の行が件名、2行目は空行、3行目以降が本文）
+        lines = content.split('\n')
+        
+        if len(lines) < 3:
+            raise ValueError("テンプレートファイルの形式が正しくありません。1行目: 件名、2行目: 空行、3行目以降: 本文")
+        
+        subject = lines[0].strip()
+        # 2行目をスキップして3行目以降を本文とする
+        body = '\n'.join(lines[2:])
+        
+        return subject, body
     
-    def create_message(self, to_email, to_name, subject, body_template, 
+    def create_message(self, to_email, to_name, subject_template, body_template, 
                       cc=None, bcc=None, reply_to=None):
         """
         メールメッセージを作成
@@ -66,7 +77,7 @@ class GmailBulkSender:
         Args:
             to_email: 宛先メールアドレス
             to_name: 宛先氏名
-            subject: 件名
+            subject_template: 件名テンプレート
             body_template: 本文テンプレート
             cc: CCアドレス（カンマ区切りまたはリスト）
             bcc: BCCアドレス（カンマ区切りまたはリスト）
@@ -78,6 +89,9 @@ class GmailBulkSender:
         msg = MIMEMultipart()
         msg['From'] = self.gmail_address
         msg['To'] = to_email
+        
+        # 件名に氏名を展開
+        subject = subject_template.replace('{氏名}', to_name)
         msg['Subject'] = Header(subject, 'utf-8')
         
         # CC設定
@@ -104,29 +118,36 @@ class GmailBulkSender:
         
         return msg
     
-    def send_bulk_emails(self, csv_file, body_file, subject, 
+    def send_bulk_emails(self, csv_file, template_file, 
                         cc=None, bcc=None, reply_to=None, delay=1):
         """
         一斉送信を実行
         
         Args:
             csv_file: 受信者リストCSVファイル
-            body_file: 本文テンプレートファイル
-            subject: メール件名
+            template_file: メールテンプレートファイル（件名と本文）
             cc: CCアドレス
             bcc: BCCアドレス
             reply_to: 返信先アドレス
             delay: メール送信間隔（秒）
         """
-        # 受信者リストと本文テンプレートを読み込み
+        # 受信者リストとテンプレートを読み込み
         recipients = self.read_recipients(csv_file)
-        body_template = self.read_body_template(body_file)
+        subject_template, body_template = self.read_email_template(template_file)
         
+        print(f"\n=== 送信内容確認 ===")
+        print(f"件名: {subject_template}")
         print(f"送信先: {len(recipients)}件")
         print(f"送信元: {self.gmail_address}")
+        if cc:
+            print(f"CC: {cc}")
+        if bcc:
+            print(f"BCC: {bcc}")
+        if reply_to:
+            print(f"Reply-To: {reply_to}")
         
         # 確認
-        confirm = input("送信を開始しますか？ (yes/no): ")
+        confirm = input("\n送信を開始しますか？ (yes/no): ")
         if confirm.lower() != 'yes':
             print("送信をキャンセルしました。")
             return
@@ -146,7 +167,7 @@ class GmailBulkSender:
                     msg = self.create_message(
                         to_email=recipient['email'],
                         to_name=recipient['name'],
-                        subject=subject,
+                        subject_template=subject_template,
                         body_template=body_template,
                         cc=cc,
                         bcc=bcc,
@@ -184,8 +205,7 @@ def main():
     
     # ファイルと設定
     csv_file = input("受信者リストCSVファイル (デフォルト: list.csv): ") or "list.csv"
-    body_file = input("本文テンプレートファイル (デフォルト: body.txt): ") or "body.txt"
-    subject = input("メール件名: ")
+    template_file = input("メールテンプレートファイル (デフォルト: body.txt): ") or "body.txt"
     
     # オプション設定
     cc = input("CC (複数の場合はカンマ区切り、不要ならEnter): ").strip() or None
@@ -196,8 +216,7 @@ def main():
     sender = GmailBulkSender(gmail_address, gmail_password)
     sender.send_bulk_emails(
         csv_file=csv_file,
-        body_file=body_file,
-        subject=subject,
+        template_file=template_file,
         cc=cc,
         bcc=bcc,
         reply_to=reply_to,
