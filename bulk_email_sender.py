@@ -3,20 +3,38 @@ import csv
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
+from email.utils import formataddr
 import time
 from getpass import getpass
 
+# ==================== 設定セクション ====================
+# ここで送信元情報を設定してください
+
+# Gmailアドレス（空文字列の場合は実行時に入力を求めます）
+DEFAULT_GMAIL_ADDRESS = ""  # 例: "your.email@gmail.com"
+
+# Gmailアプリパスワード（空文字列の場合は実行時に入力を求めます）
+# セキュリティ上、ここには記載せず実行時に入力することを推奨
+DEFAULT_GMAIL_PASSWORD = ""
+
+# 送信元表示名（空文字列の場合はメールアドレスのみ表示）
+SENDER_DISPLAY_NAME = ""  # 例: "株式会社サンプル 営業部"
+
+# =======================================================
+
 class GmailBulkSender:
-    def __init__(self, gmail_address, gmail_password):
+    def __init__(self, gmail_address, gmail_password, sender_display_name=""):
         """
         Gmail一斉送信クラスの初期化
         
         Args:
             gmail_address: 送信元Gmailアドレス
             gmail_password: Gmailアプリパスワード
+            sender_display_name: 送信元表示名（オプション）
         """
         self.gmail_address = gmail_address
         self.gmail_password = gmail_password
+        self.sender_display_name = sender_display_name
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587
     
@@ -87,7 +105,13 @@ class GmailBulkSender:
             MIMEMultipartメッセージオブジェクト
         """
         msg = MIMEMultipart()
-        msg['From'] = self.gmail_address
+        
+        # 送信元の設定（表示名がある場合は formataddr を使用）
+        if self.sender_display_name:
+            msg['From'] = formataddr((self.sender_display_name, self.gmail_address))
+        else:
+            msg['From'] = self.gmail_address
+            
         msg['To'] = to_email
         
         # 件名に氏名を展開
@@ -138,7 +162,10 @@ class GmailBulkSender:
         print(f"\n=== 送信内容確認 ===")
         print(f"件名: {subject_template}")
         print(f"送信先: {len(recipients)}件")
-        print(f"送信元: {self.gmail_address}")
+        if self.sender_display_name:
+            print(f"送信元: {self.sender_display_name} <{self.gmail_address}>")
+        else:
+            print(f"送信元: {self.gmail_address}")
         if cc:
             print(f"CC: {cc}")
         if bcc:
@@ -200,8 +227,27 @@ def main():
     
     # Gmail設定
     print("=== Gmail一斉送信ツール ===\n")
-    gmail_address = input("送信元Gmailアドレス: ")
-    gmail_password = getpass("Gmailアプリパスワード: ")
+    
+    # Gmailアドレスの取得（デフォルト値がある場合はそれを使用）
+    if DEFAULT_GMAIL_ADDRESS:
+        gmail_address = DEFAULT_GMAIL_ADDRESS
+        print(f"送信元Gmailアドレス: {gmail_address} (設定済み)")
+    else:
+        gmail_address = input("送信元Gmailアドレス: ")
+    
+    # アプリパスワードの取得（デフォルト値がある場合はそれを使用）
+    if DEFAULT_GMAIL_PASSWORD:
+        gmail_password = DEFAULT_GMAIL_PASSWORD
+        print("Gmailアプリパスワード: ******** (設定済み)")
+    else:
+        gmail_password = getpass("Gmailアプリパスワード: ")
+    
+    # 送信元表示名の取得
+    if SENDER_DISPLAY_NAME:
+        sender_display_name = SENDER_DISPLAY_NAME
+        print(f"送信元表示名: {sender_display_name} (設定済み)")
+    else:
+        sender_display_name = input("送信元表示名 (不要ならEnter): ").strip()
     
     # ファイルと設定
     csv_file = input("受信者リストCSVファイル (デフォルト: list.csv): ") or "list.csv"
@@ -213,7 +259,7 @@ def main():
     reply_to = input("Reply-To (不要ならEnter): ").strip() or None
     
     # 送信実行
-    sender = GmailBulkSender(gmail_address, gmail_password)
+    sender = GmailBulkSender(gmail_address, gmail_password, sender_display_name)
     sender.send_bulk_emails(
         csv_file=csv_file,
         template_file=template_file,
