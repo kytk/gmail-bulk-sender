@@ -20,6 +20,21 @@ DEFAULT_GMAIL_PASSWORD = ""
 # 送信元表示名（空文字列の場合はメールアドレスのみ表示）
 SENDER_DISPLAY_NAME = ""  # 例: "株式会社サンプル 営業部"
 
+# 受信者リストCSVファイル（空文字列の場合はデフォルト: list.csv）
+DEFAULT_CSV_FILE = ""  # 例: "recipients.csv"
+
+# メールテンプレートファイル（空文字列の場合はデフォルト: body.txt）
+DEFAULT_TEMPLATE_FILE = ""  # 例: "email_template.txt"
+
+# CC（空文字列の場合は実行時に入力を求めます）
+DEFAULT_CC = ""  # 例: "cc@example.com" または "email1@example.com,email2@example.com"
+
+# BCC（空文字列の場合は実行時に入力を求めます）
+DEFAULT_BCC = ""  # 例: "bcc@example.com"
+
+# Reply-To（空文字列の場合は実行時に入力を求めます）
+DEFAULT_REPLY_TO = ""  # 例: "reply@example.com"
+
 # =======================================================
 
 class GmailBulkSender:
@@ -250,13 +265,36 @@ def main():
         sender_display_name = input("送信元表示名 (不要ならEnter): ").strip()
     
     # ファイルと設定
-    csv_file = input("受信者リストCSVファイル (デフォルト: list.csv): ") or "list.csv"
-    template_file = input("メールテンプレートファイル (デフォルト: body.txt): ") or "body.txt"
+    if DEFAULT_CSV_FILE:
+        csv_file = DEFAULT_CSV_FILE
+        print(f"受信者リストCSVファイル: {csv_file} (設定済み)")
+    else:
+        csv_file = input("受信者リストCSVファイル (デフォルト: list.csv): ") or "list.csv"
+    
+    if DEFAULT_TEMPLATE_FILE:
+        template_file = DEFAULT_TEMPLATE_FILE
+        print(f"メールテンプレートファイル: {template_file} (設定済み)")
+    else:
+        template_file = input("メールテンプレートファイル (デフォルト: body.txt): ") or "body.txt"
     
     # オプション設定
-    cc = input("CC (複数の場合はカンマ区切り、不要ならEnter): ").strip() or None
-    bcc = input("BCC (複数の場合はカンマ区切り、不要ならEnter): ").strip() or None
-    reply_to = input("Reply-To (不要ならEnter): ").strip() or None
+    if DEFAULT_CC:
+        cc = DEFAULT_CC
+        print(f"CC: {cc} (設定済み)")
+    else:
+        cc = input("CC (複数の場合はカンマ区切り、不要ならEnter): ").strip() or None
+    
+    if DEFAULT_BCC:
+        bcc = DEFAULT_BCC
+        print(f"BCC: {bcc} (設定済み)")
+    else:
+        bcc = input("BCC (複数の場合はカンマ区切り、不要ならEnter): ").strip() or None
+    
+    if DEFAULT_REPLY_TO:
+        reply_to = DEFAULT_REPLY_TO
+        print(f"Reply-To: {reply_to} (設定済み)")
+    else:
+        reply_to = input("Reply-To (不要ならEnter): ").strip() or None
     
     # 送信実行
     sender = GmailBulkSender(gmail_address, gmail_password, sender_display_name)
