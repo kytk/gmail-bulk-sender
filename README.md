@@ -2,8 +2,32 @@
 
 Gmailを使用して、CSVリストに基づいた個別対応のメールを一斉送信するPythonスクリプトです。
 
+## スクリプトの種類
+
+このリポジトリには2つのスクリプトが含まれています：
+
+1. **bulk_email_sender.py** - Gmail専用版
+   - Gmail SMTPサーバーに特化
+   - Gmailアプリパスワードを使用
+   - 設定が簡単で、Gmailユーザーにおすすめ
+
+2. **email_bulk_sender.py** - 汎用版
+   - 任意のSMTPサーバーに対応（Gmail、Outlook、独自メールサーバーなど）
+   - SMTPサーバー、ポート、認証情報を自由に設定可能
+   - SSL/TLS両方に対応
+   - 送信元表示名のカスタマイズが可能
+   - 設定ファイルでデフォルト値を事前設定できる
+
+**どちらを使うべきか：**
+- **Gmailのみ使用** → `bulk_email_sender.py`（簡単）
+- **Gmail以外のメールサーバー使用** → `email_bulk_sender.py`（柔軟）
+- **送信元表示名をカスタマイズしたい** → `email_bulk_sender.py`
+
+以下の説明は主に`bulk_email_sender.py`（Gmail専用版）に関するものです。`email_bulk_sender.py`の使い方は[汎用版の使い方](#汎用版email_bulk_senderpy)をご覧ください。
+
 ## 目次
 
+- [スクリプトの種類](#スクリプトの種類)
 - [機能](#機能)
 - [必要な環境](#必要な環境)
 - [セットアップ](#セットアップ)
@@ -12,6 +36,7 @@ Gmailを使用して、CSVリストに基づいた個別対応のメールを一
 - [トラブルシューティング](#トラブルシューティング)
 - [注意事項](#注意事項)
 - [よくある質問](#よくある質問)
+- [汎用版(email_bulk_sender.py)](#汎用版email_bulk_senderpy)
 
 ## 機能
 
@@ -293,6 +318,130 @@ A: `send_bulk_emails`メソッドの`delay`パラメータ（デフォルト1秒
 
 A: CSVに列を追加し、スクリプトを修正すれば可能です。例えば`{会社名}`や`{役職}`なども使用できます。
 
+## 汎用版(email_bulk_sender.py)
+
+### 概要
+
+`email_bulk_sender.py`は任意のSMTPサーバーに対応した汎用的なメール一斉送信スクリプトです。Gmail以外のメールサービス（Outlook、Yahoo、独自メールサーバーなど）や、送信元表示名のカスタマイズが必要な場合に使用します。
+
+### Gmail専用版との主な違い
+
+1. **対応SMTPサーバー**
+   - Gmail専用版: Gmail SMTPのみ
+   - 汎用版: 任意のSMTPサーバー
+
+2. **設定方法**
+   - Gmail専用版: 実行時にGmailアドレスとアプリパスワードを入力
+   - 汎用版: スクリプト内の設定セクションで事前設定可能（実行時入力も可能）
+
+3. **送信元表示名**
+   - Gmail専用版: メールアドレスのみ
+   - 汎用版: 任意の表示名を設定可能（例: "株式会社サンプル 営業部"）
+
+4. **SSL/TLS対応**
+   - Gmail専用版: TLS固定
+   - 汎用版: ポート番号により自動判別（465=SSL、587=TLS）
+
+### 使い方
+
+#### 1. 設定ファイルの編集（オプション）
+
+`email_bulk_sender.py`を開き、冒頭の設定セクションを編集します：
+
+```python
+# SMTPサーバー（空文字列の場合は実行時に入力を求めます）
+DEFAULT_SMTP_SERVER = "smtp.example.com"  # 例: "smtp.gmail.com", "smtp.office365.com"
+
+# SMTPポート番号（空文字列の場合は実行時に入力を求めます）
+DEFAULT_SMTP_PORT = "587"  # 587 (TLS), 465 (SSL), 25 (非暗号化)
+
+# メールアドレス（空文字列の場合は実行時に入力を求めます）
+DEFAULT_EMAIL_ADDRESS = "your.email@example.com"
+
+# メールパスワード（セキュリティ上、空文字列のまま実行時入力を推奨）
+DEFAULT_EMAIL_PASSWORD = ""
+
+# 送信元表示名（空文字列の場合はメールアドレスのみ表示）
+SENDER_DISPLAY_NAME = "株式会社サンプル 営業部"
+
+# 受信者リストCSVファイル
+DEFAULT_CSV_FILE = "list.csv"
+
+# メールテンプレートファイル
+DEFAULT_TEMPLATE_FILE = "body.txt"
+
+# CC, BCC, Reply-To（オプション）
+DEFAULT_CC = ""
+DEFAULT_BCC = ""
+DEFAULT_REPLY_TO = ""
+```
+
+**設定のポイント：**
+- 空文字列 `""` のままにした項目は実行時に入力を求められます
+- パスワードは**セキュリティ上、空文字列のまま**にすることを推奨
+- 設定した項目は実行時に「(設定済み)」と表示され、入力をスキップします
+
+#### 2. ファイルの準備
+
+`list.csv`と`body.txt`は`bulk_email_sender.py`と同じ形式です（[ファイルの準備](#ファイルの準備)参照）。
+
+#### 3. スクリプトの実行
+
+```bash
+python email_bulk_sender.py
+```
+
+実行すると、設定していない項目について入力を求められます：
+
+```
+=== メール一斉送信ツール ===
+
+SMTPサーバー (例: smtp.gmail.com): smtp.example.com
+SMTPポート (デフォルト: 587): 587
+送信元メールアドレス: your.email@example.com
+メールパスワード: ********
+送信元表示名 (不要ならEnter): 株式会社サンプル 営業部
+受信者リストCSVファイル (デフォルト: list.csv):
+メールテンプレートファイル (デフォルト: body.txt):
+CC (複数の場合はカンマ区切り、不要ならEnter):
+BCC (複数の場合はカンマ区切り、不要ならEnter):
+Reply-To (不要ならEnter):
+```
+
+### 主要メールサービスのSMTP設定
+
+| サービス | SMTPサーバー | ポート | セキュリティ |
+|---------|-------------|-------|-------------|
+| Gmail | smtp.gmail.com | 587 | TLS |
+| Outlook/Office365 | smtp.office365.com | 587 | TLS |
+| Yahoo Mail | smtp.mail.yahoo.com | 587 | TLS |
+| iCloud | smtp.mail.me.com | 587 | TLS |
+
+**注意：** Gmailを使用する場合、アプリパスワードの取得が必要です（[Gmailアプリパスワードの取得](#2-gmailアプリパスワードの取得)参照）。
+
+### トラブルシューティング（汎用版特有）
+
+#### ポート番号エラー
+
+```
+ConnectionRefusedError: [Errno 111] Connection refused
+```
+
+**対処法：**
+- 正しいポート番号を確認（一般的には587または465）
+- ファイアウォールがポートをブロックしていないか確認
+- SMTPサーバーアドレスが正しいか確認
+
+#### SSL/TLS エラー
+
+```
+ssl.SSLError: [SSL: WRONG_VERSION_NUMBER]
+```
+
+**対処法：**
+- ポート465の場合はSSL、587の場合はTLSが使用されます
+- ポート番号とサーバー設定の組み合わせを確認
+
 ## ライセンス
 
 このスクリプトは自由に使用・改変できます。
@@ -312,8 +461,32 @@ A: CSVに列を追加し、スクリプトを修正すれば可能です。例�
 
 A Python script for sending personalized bulk emails via Gmail based on a CSV recipient list.
 
+## Script Types
+
+This repository contains two scripts:
+
+1. **bulk_email_sender.py** - Gmail-specific version
+   - Specialized for Gmail SMTP server
+   - Uses Gmail App Password
+   - Easy to set up, recommended for Gmail users
+
+2. **email_bulk_sender.py** - Generic version
+   - Supports any SMTP server (Gmail, Outlook, custom mail servers, etc.)
+   - Flexible SMTP server, port, and authentication settings
+   - Supports both SSL/TLS
+   - Customizable sender display name
+   - Pre-configurable default values in settings section
+
+**Which one to use:**
+- **Gmail only** → `bulk_email_sender.py` (easier)
+- **Non-Gmail mail servers** → `email_bulk_sender.py` (flexible)
+- **Need custom sender display name** → `email_bulk_sender.py`
+
+The following documentation primarily covers `bulk_email_sender.py` (Gmail-specific version). For `email_bulk_sender.py` usage, see [Generic Version Usage](#generic-version-email_bulk_senderpy).
+
 ## Table of Contents
 
+- [Script Types](#script-types)
 - [Features](#features)
 - [Requirements](#requirements)
 - [Setup](#setup)
@@ -322,6 +495,7 @@ A Python script for sending personalized bulk emails via Gmail based on a CSV re
 - [Troubleshooting](#troubleshooting)
 - [Important Notes](#important-notes)
 - [FAQ](#faq)
+- [Generic Version (email_bulk_sender.py)](#generic-version-email_bulk_senderpy)
 
 ## Features
 
@@ -601,6 +775,130 @@ A: Yes, modify the `delay` parameter (default 1 second) in the `send_bulk_emails
 ### Q: Can I use multiple variables (besides name)?
 
 A: Yes, add columns to the CSV and modify the script. For example, you can use `{会社名}` (company name) or `{役職}` (title).
+
+## Generic Version (email_bulk_sender.py)
+
+### Overview
+
+`email_bulk_sender.py` is a generic bulk email sender that supports any SMTP server. Use this when you need to send emails from non-Gmail services (Outlook, Yahoo, custom mail servers, etc.) or when you need to customize the sender display name.
+
+### Key Differences from Gmail-Specific Version
+
+1. **SMTP Server Support**
+   - Gmail-specific: Gmail SMTP only
+   - Generic: Any SMTP server
+
+2. **Configuration Method**
+   - Gmail-specific: Enter Gmail address and app password at runtime
+   - Generic: Pre-configure in settings section (runtime input also available)
+
+3. **Sender Display Name**
+   - Gmail-specific: Email address only
+   - Generic: Customizable display name (e.g., "Sample Corp Sales Department")
+
+4. **SSL/TLS Support**
+   - Gmail-specific: TLS only
+   - Generic: Auto-detects based on port (465=SSL, 587=TLS)
+
+### Usage
+
+#### 1. Edit Configuration (Optional)
+
+Open `email_bulk_sender.py` and edit the settings section at the top:
+
+```python
+# SMTP server (leave empty to prompt at runtime)
+DEFAULT_SMTP_SERVER = "smtp.example.com"  # e.g., "smtp.gmail.com", "smtp.office365.com"
+
+# SMTP port (leave empty to prompt at runtime)
+DEFAULT_SMTP_PORT = "587"  # 587 (TLS), 465 (SSL), 25 (unencrypted)
+
+# Email address (leave empty to prompt at runtime)
+DEFAULT_EMAIL_ADDRESS = "your.email@example.com"
+
+# Email password (recommended to leave empty for security)
+DEFAULT_EMAIL_PASSWORD = ""
+
+# Sender display name (leave empty to show email address only)
+SENDER_DISPLAY_NAME = "Sample Corp Sales Department"
+
+# Recipient list CSV file
+DEFAULT_CSV_FILE = "list.csv"
+
+# Email template file
+DEFAULT_TEMPLATE_FILE = "body.txt"
+
+# CC, BCC, Reply-To (optional)
+DEFAULT_CC = ""
+DEFAULT_BCC = ""
+DEFAULT_REPLY_TO = ""
+```
+
+**Configuration Tips:**
+- Items left as empty strings `""` will prompt for input at runtime
+- **For security, keep passwords empty** and enter at runtime
+- Configured items will show "(configured)" at runtime and skip prompts
+
+#### 2. File Preparation
+
+Use the same format for `list.csv` and `body.txt` as `bulk_email_sender.py` (see [File Preparation](#file-preparation)).
+
+#### 3. Run the Script
+
+```bash
+python email_bulk_sender.py
+```
+
+You'll be prompted for unconfigured items:
+
+```
+=== Email Bulk Sender Tool ===
+
+SMTP server (e.g., smtp.gmail.com): smtp.example.com
+SMTP port (default: 587): 587
+Sender email address: your.email@example.com
+Email password: ********
+Sender display name (press Enter to skip): Sample Corp Sales Department
+Recipient list CSV file (default: list.csv):
+Email template file (default: body.txt):
+CC (comma-separated for multiple, press Enter to skip):
+BCC (comma-separated for multiple, press Enter to skip):
+Reply-To (press Enter to skip):
+```
+
+### SMTP Settings for Major Email Services
+
+| Service | SMTP Server | Port | Security |
+|---------|------------|------|----------|
+| Gmail | smtp.gmail.com | 587 | TLS |
+| Outlook/Office365 | smtp.office365.com | 587 | TLS |
+| Yahoo Mail | smtp.mail.yahoo.com | 587 | TLS |
+| iCloud | smtp.mail.me.com | 587 | TLS |
+
+**Note:** When using Gmail, you need to obtain an App Password (see [Obtain Gmail App Password](#2-obtain-gmail-app-password)).
+
+### Troubleshooting (Generic Version Specific)
+
+#### Port Number Error
+
+```
+ConnectionRefusedError: [Errno 111] Connection refused
+```
+
+**Solutions:**
+- Verify correct port number (typically 587 or 465)
+- Check if firewall is blocking the port
+- Verify SMTP server address is correct
+
+#### SSL/TLS Error
+
+```
+ssl.SSLError: [SSL: WRONG_VERSION_NUMBER]
+```
+
+**Solutions:**
+- Port 465 uses SSL, port 587 uses TLS
+- Verify port number and server configuration combination
 
 ## License
 
