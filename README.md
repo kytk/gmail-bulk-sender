@@ -40,8 +40,8 @@ Gmailを使用して、CSVリストに基づいた個別対応のメールを一
 
 ## 機能
 
-- CSVファイルから受信者リストを読み込み
-- テンプレート内の`{氏名}`を各受信者の名前に自動置換
+- CSVファイルから受信者リスト（企業名、氏名、メールアドレス）を読み込み
+- テンプレート内の`{企業}`と`{氏名}`を各受信者の情報に自動置換
 - 件名と本文を1つのテンプレートファイルで管理
 - CC、BCC、Reply-To の設定に対応
 - Gmail SMTP経由で安全に送信
@@ -117,15 +117,15 @@ CSVファイルに受信者の情報を記載します。
 
 **フォーマット：**
 ```csv
-氏名,メールアドレス
-山田太郎,yamada@example.com
-佐藤花子,sato@example.com
-鈴木一郎,suzuki@example.com
-田中美咲,tanaka@example.com
+企業,氏名,メールアドレス
+株式会社ABC,山田太郎,yamada@example.com
+XYZ商事株式会社,佐藤花子,sato@example.com
+テクノロジー株式会社,鈴木一郎,suzuki@example.com
+サンプル株式会社,田中美咲,tanaka@example.com
 ```
 
 **注意点：**
-- 1行目は必ずヘッダー行（`氏名,メールアドレス`）
+- 1行目は必ずヘッダー行（`企業,氏名,メールアドレス`）
 - 文字コードは UTF-8 で保存
 - Excelで編集する場合、保存時に「CSV UTF-8（コンマ区切り）」を選択
 
@@ -135,12 +135,15 @@ CSVファイルに受信者の情報を記載します。
 
 **フォーマット：**
 ```
-【重要】新サービスのご案内 - {氏名}様
+【重要】新サービスのご案内 - {企業} {氏名}様
 
+{企業}
 {氏名}様
 
 いつもお世話になっております。
 株式会社サンプルの営業部です。
+
+{企業}様におかれましては、ますますご清栄のこととお慶び申し上げます。
 
 この度、新サービス「○○○」をリリースいたしましたので、
 ご案内させていただきます。
@@ -166,9 +169,9 @@ Tel: 03-1234-5678
 ```
 
 **ルール：**
-- **1行目**: 件名（`{氏名}`で受信者名を挿入可能）
+- **1行目**: 件名（`{企業}`で企業名、`{氏名}`で受信者名を挿入可能）
 - **2行目**: 空行（必須）
-- **3行目以降**: 本文（`{氏名}`で受信者名を挿入可能）
+- **3行目以降**: 本文（`{企業}`で企業名、`{氏名}`で受信者名を挿入可能）
 
 ## 使い方
 
@@ -206,13 +209,13 @@ Reply-To (不要ならEnter): reply@example.com
 
 ```
 === 送信内容確認 ===
-件名: 【重要】新サービスのご案内 - {氏名}様
+件名: 【重要】新サービスのご案内 - {企業} {氏名}様
 送信先: 4件
 送信元: your.email@gmail.com
 CC: cc@example.com
 Reply-To: reply@example.com
 
-送信を開始しますか？ (yes/no): 
+送信を開始しますか？ (yes/no):
 ```
 
 ### 4. 送信開始
@@ -220,10 +223,10 @@ Reply-To: reply@example.com
 `yes` と入力すると送信が開始されます：
 
 ```
-[1/4] 送信成功: 山田太郎 (yamada@example.com)
-[2/4] 送信成功: 佐藤花子 (sato@example.com)
-[3/4] 送信成功: 鈴木一郎 (suzuki@example.com)
-[4/4] 送信成功: 田中美咲 (tanaka@example.com)
+[1/4] 送信成功: 株式会社ABC 山田太郎 (yamada@example.com)
+[2/4] 送信成功: XYZ商事株式会社 佐藤花子 (sato@example.com)
+[3/4] 送信成功: テクノロジー株式会社 鈴木一郎 (suzuki@example.com)
+[4/4] 送信成功: サンプル株式会社 田中美咲 (tanaka@example.com)
 
 送信完了: 成功 4件, 失敗 0件
 ```
@@ -314,9 +317,9 @@ A: 現在のバージョンは未対応。添付ファイル機能が必要な�
 
 A: `send_bulk_emails`メソッドの`delay`パラメータ（デフォルト1秒）を変更できます。
 
-### Q: 複数の変数（氏名以外）を使えますか？
+### Q: 複数の変数（企業・氏名以外）を使えますか？
 
-A: CSVに列を追加し、スクリプトを修正すれば可能です。例えば`{会社名}`や`{役職}`なども使用できます。
+A: 現在、`{企業}`と`{氏名}`の2つのプレースホルダーが使用可能です。さらに追加したい場合は、CSVに列を追加し、スクリプトを修正すれば可能です。例えば`{役職}`なども使用できます。
 
 ## 汎用版(email_bulk_sender.py)
 
@@ -499,8 +502,8 @@ The following documentation primarily covers `bulk_email_sender.py` (Gmail-speci
 
 ## Features
 
-- Load recipient list from CSV file
-- Automatically replace `{氏名}` (name) placeholders with individual recipient names
+- Load recipient list (company name, name, email address) from CSV file
+- Automatically replace `{企業}` (company) and `{氏名}` (name) placeholders with individual recipient information
 - Manage subject and body in a single template file
 - Support for CC, BCC, and Reply-To
 - Secure sending via Gmail SMTP
@@ -576,15 +579,15 @@ Enter recipient information in the CSV file.
 
 **Format:**
 ```csv
-氏名,メールアドレス
-山田太郎,yamada@example.com
-佐藤花子,sato@example.com
-鈴木一郎,suzuki@example.com
-田中美咲,tanaka@example.com
+企業,氏名,メールアドレス
+株式会社ABC,山田太郎,yamada@example.com
+XYZ商事株式会社,佐藤花子,sato@example.com
+テクノロジー株式会社,鈴木一郎,suzuki@example.com
+サンプル株式会社,田中美咲,tanaka@example.com
 ```
 
 **Notes:**
-- First line must be the header row (`氏名,メールアドレス`)
+- First line must be the header row (`企業,氏名,メールアドレス`)
 - Save with UTF-8 encoding
 - If editing in Excel, select "CSV UTF-8 (Comma delimited)" when saving
 
@@ -594,12 +597,15 @@ Write the email subject and body.
 
 **Format:**
 ```
-[Important] New Service Announcement - {氏名}様
+[Important] New Service Announcement - {企業} {氏名}様
 
+{企業}
 {氏名}様
 
 Thank you for your continued support.
 This is the Sales Department of Sample Corporation.
+
+We hope {企業} is prospering.
 
 We are pleased to announce the release of our new service "XXX".
 
@@ -624,9 +630,9 @@ Tel: 03-1234-5678
 ```
 
 **Rules:**
-- **Line 1**: Subject (can use `{氏名}` to insert recipient name)
+- **Line 1**: Subject (can use `{企業}` for company name and `{氏名}` for recipient name)
 - **Line 2**: Empty line (required)
-- **Line 3 onwards**: Body (can use `{氏名}` to insert recipient name)
+- **Line 3 onwards**: Body (can use `{企業}` for company name and `{氏名}` for recipient name)
 
 ## Usage
 
@@ -664,13 +670,13 @@ After input, the sending details will be displayed:
 
 ```
 === 送信内容確認 ===
-件名: 【重要】新サービスのご案内 - {氏名}様
+件名: 【重要】新サービスのご案内 - {企業} {氏名}様
 送信先: 4件
 送信元: your.email@gmail.com
 CC: cc@example.com
 Reply-To: reply@example.com
 
-送信を開始しますか？ (yes/no): 
+送信を開始しますか？ (yes/no):
 ```
 
 ### 4. Start Sending
@@ -678,10 +684,10 @@ Reply-To: reply@example.com
 Type `yes` to begin sending:
 
 ```
-[1/4] 送信成功: 山田太郎 (yamada@example.com)
-[2/4] 送信成功: 佐藤花子 (sato@example.com)
-[3/4] 送信成功: 鈴木一郎 (suzuki@example.com)
-[4/4] 送信成功: 田中美咲 (tanaka@example.com)
+[1/4] 送信成功: 株式会社ABC 山田太郎 (yamada@example.com)
+[2/4] 送信成功: XYZ商事株式会社 佐藤花子 (sato@example.com)
+[3/4] 送信成功: テクノロジー株式会社 鈴木一郎 (suzuki@example.com)
+[4/4] 送信成功: サンプル株式会社 田中美咲 (tanaka@example.com)
 
 送信完了: 成功 4件, 失敗 0件
 ```
@@ -772,9 +778,9 @@ A: Not supported in the current version. Script extension is required for attach
 
 A: Yes, modify the `delay` parameter (default 1 second) in the `send_bulk_emails` method.
 
-### Q: Can I use multiple variables (besides name)?
+### Q: Can I use multiple variables (besides company and name)?
 
-A: Yes, add columns to the CSV and modify the script. For example, you can use `{会社名}` (company name) or `{役職}` (title).
+A: Currently, two placeholders `{企業}` (company) and `{氏名}` (name) are available. To add more, you can add columns to the CSV and modify the script. For example, you can add `{役職}` (title).
 
 ## Generic Version (email_bulk_sender.py)
 

@@ -1,4 +1,4 @@
-氏名,メールアドレス
-山田 太郎,taro.yamada@example.com
-鈴木 花子,hanako.suzuki@example.com
-佐藤 次郎,jiro.sato@example.com
+企業,氏名,メールアドレス
+株式会社ABC,山田 太郎,taro.yamada@example.com
+XYZ商事株式会社,鈴木 花子,hanako.suzuki@example.com
+テクノロジー株式会社,佐藤 次郎,jiro.sato@example.com
