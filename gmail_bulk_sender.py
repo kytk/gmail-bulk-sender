@@ -11,6 +11,7 @@ from getpass import getpass
 import os
 from urllib.parse import quote
 import mimetypes
+import chardet
 
 # ==================== 設定セクション ====================
 # ここで送信元情報を設定してください
@@ -68,7 +69,7 @@ class GmailBulkSender:
     
     def read_recipients(self, csv_file):
         """
-        CSVファイルから受信者リストを読み込む
+        CSVファイルから受信者リストを読み込む（文字コード自動検出）
 
         Args:
             csv_file: CSVファイルのパス（企業,氏名,メールアドレスの形式）
@@ -76,8 +77,17 @@ class GmailBulkSender:
         Returns:
             受信者の辞書リスト [{'company': '株式会社ABC', 'name': '山田太郎', 'email': 'yamada@example.com'}, ...]
         """
+        # ファイルの文字コードを自動検出
+        with open(csv_file, 'rb') as f:
+            raw_data = f.read()
+            detected = chardet.detect(raw_data)
+            encoding = detected['encoding']
+            confidence = detected['confidence']
+            print(f"CSVファイルの文字コード: {encoding} (信頼度: {confidence:.2%})")
+
+        # 検出された文字コードでファイルを読み込む
         recipients = []
-        with open(csv_file, 'r', encoding='utf-8') as f:
+        with open(csv_file, 'r', encoding=encoding) as f:
             reader = csv.DictReader(f)
             for row in reader:
                 # CSVのカラム名に応じて調整
@@ -94,27 +104,36 @@ class GmailBulkSender:
     
     def read_email_template(self, template_file):
         """
-        メールテンプレートを読み込む（件名と本文を分離）
-        
+        メールテンプレートを読み込む（件名と本文を分離、文字コード自動検出）
+
         Args:
             template_file: テンプレートファイルのパス
-            
+
         Returns:
             (subject, body) のタプル
         """
-        with open(template_file, 'r', encoding='utf-8') as f:
+        # ファイルの文字コードを自動検出
+        with open(template_file, 'rb') as f:
+            raw_data = f.read()
+            detected = chardet.detect(raw_data)
+            encoding = detected['encoding']
+            confidence = detected['confidence']
+            print(f"テンプレートファイルの文字コード: {encoding} (信頼度: {confidence:.2%})")
+
+        # 検出された文字コードでファイルを読み込む
+        with open(template_file, 'r', encoding=encoding) as f:
             content = f.read()
-        
+
         # 件名と本文を分離（最初の行が件名、2行目は空行、3行目以降が本文）
         lines = content.split('\n')
-        
+
         if len(lines) < 3:
             raise ValueError("テンプレートファイルの形式が正しくありません。1行目: 件名、2行目: 空行、3行目以降: 本文")
-        
+
         subject = lines[0].strip()
         # 2行目をスキップして3行目以降を本文とする
         body = '\n'.join(lines[2:])
-        
+
         return subject, body
     
     def create_message(self, to_email, to_name, to_company, subject_template, body_template,

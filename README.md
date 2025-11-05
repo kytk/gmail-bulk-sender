@@ -1,12 +1,12 @@
-# Gmail一斉送信ツール
+# メール一括送信ツール
 
-Gmailを使用して、CSVリストに基づいた個別対応のメールを一斉送信するPythonスクリプトです。
+CSVリストに基づいた個別対応のメールを一斉送信するツールです。コマンドライン版（CLI）とGUI版の両方を提供しています。
 
-## スクリプトの種類
+## ツールの種類
 
-このリポジトリには2つのスクリプトが含まれています：
+### CLI版（コマンドライン）
 
-1. **bulk_email_sender.py** - Gmail専用版
+1. **gmail_bulk_sender.py** - Gmail専用版
    - Gmail SMTPサーバーに特化
    - Gmailアプリパスワードを使用
    - 設定が簡単で、Gmailユーザーにおすすめ
@@ -18,21 +18,45 @@ Gmailを使用して、CSVリストに基づいた個別対応のメールを一
    - 送信元表示名のカスタマイズが可能
    - 設定ファイルでデフォルト値を事前設定できる
 
-**どちらを使うべきか：**
-- **Gmailのみ使用** → `bulk_email_sender.py`（簡単）
-- **Gmail以外のメールサーバー使用** → `email_bulk_sender.py`（柔軟）
-- **送信元表示名をカスタマイズしたい** → `email_bulk_sender.py`
+### GUI版（グラフィカルユーザーインターフェース）
 
-以下の説明は主に`bulk_email_sender.py`（Gmail専用版）に関するものです。`email_bulk_sender.py`の使い方は[汎用版の使い方](#汎用版email_bulk_senderpy)をご覧ください。
+3. **email_bulk_sender_gui.py** - 汎用版GUI
+   - 視覚的に操作できるGUIアプリケーション
+   - ファイル選択ダイアログで簡単にファイルを指定
+   - リアルタイムの進捗表示とログ表示
+   - 送信前のプレビュー機能
+   - コマンドラインに不慣れな方におすすめ
+
+4. **gmail_bulk_sender_gui.py** - Gmail専用版GUI
+   - Gmail専用のGUIアプリケーション
+   - 設定項目が少なく、より簡単に使用可能
+
+### スタンドアロン実行ファイル（.exe / バイナリ）
+
+- **EmailBulkSender** - 汎用版GUI実行ファイル
+- **GmailBulkSender** - Gmail専用版GUI実行ファイル
+
+Pythonがインストールされていない環境でも実行可能です。詳細は[BUILD_GUIDE.md](BUILD_GUIDE.md)を参照してください。
+
+**どれを使うべきか：**
+- **初めて使う / GUIが好き** → GUI版（`email_bulk_sender_gui.py` または `gmail_bulk_sender_gui.py`）
+- **コマンドラインに慣れている** → CLI版（`email_bulk_sender.py` または `gmail_bulk_sender.py`）
+- **Pythonがない環境で使いたい** → スタンドアロン実行ファイル（dist/EmailBulkSender または dist/GmailBulkSender）
+- **Gmailのみ使用** → Gmail専用版
+- **Gmail以外のメールサーバー使用** → 汎用版
+
+以下の説明は主にCLI版に関するものです。GUI版の使い方は[GUI版の使い方](#gui版の使い方)をご覧ください。
 
 ## 目次
 
-- [スクリプトの種類](#スクリプトの種類)
+- [ツールの種類](#ツールの種類)
 - [機能](#機能)
 - [必要な環境](#必要な環境)
 - [セットアップ](#セットアップ)
 - [ファイルの準備](#ファイルの準備)
-- [使い方](#使い方)
+- [使い方（CLI版）](#使い方cli版)
+- [GUI版の使い方](#gui版の使い方)
+- [スタンドアロン実行ファイルの作成](#スタンドアロン実行ファイルの作成)
 - [トラブルシューティング](#トラブルシューティング)
 - [注意事項](#注意事項)
 - [よくある質問](#よくある質問)
@@ -40,13 +64,23 @@ Gmailを使用して、CSVリストに基づいた個別対応のメールを一
 
 ## 機能
 
+### 共通機能
 - CSVファイルから受信者リスト（企業名、氏名、メールアドレス）を読み込み
 - テンプレート内の`{企業}`と`{氏名}`を各受信者の情報に自動置換
 - 件名と本文を1つのテンプレートファイルで管理
 - CC、BCC、Reply-To の設定に対応
-- Gmail SMTP経由で安全に送信
+- ファイルの添付に対応
+- 文字コード自動検出（UTF-8、Shift_JIS、EUC-JPなど）
 - 送信制限対策（送信間隔の自動調整）
 - 送信結果のリアルタイム表示
+
+### GUI版の追加機能
+- 視覚的で直感的な操作インターフェース
+- ファイル選択ダイアログ
+- 送信前のプレビュー機能
+- リアルタイムプログレスバー
+- 詳細な送信ログ表示
+- エラー時のわかりやすいメッセージ表示
 
 ## 必要な環境
 
@@ -906,6 +940,103 @@ ssl.SSLError: [SSL: WRONG_VERSION_NUMBER]
 - Port 465 uses SSL, port 587 uses TLS
 - Verify port number and server configuration combination
 
+## GUI版の使い方
+
+### 必要なパッケージ
+
+GUI版を使用する場合、追加のパッケージが必要です：
+
+```bash
+pip install customtkinter chardet
+```
+
+### 起動方法
+
+#### 汎用版GUI
+```bash
+python email_bulk_sender_gui.py
+```
+
+#### Gmail専用版GUI
+```bash
+python gmail_bulk_sender_gui.py
+```
+
+### 操作手順
+
+1. **基本設定タブ**
+   - SMTPサーバー情報（汎用版）またはGmailアカウント情報（Gmail版）を入力
+   - メールアドレスとパスワードを入力
+   - 送信元表示名を入力（オプション）
+
+2. **ファイル選択タブ**
+   - 「ファイル選択」ボタンをクリックして、受信者リストCSVファイルを選択
+   - 「ファイル選択」ボタンをクリックして、メールテンプレートファイルを選択
+   - 添付ファイルがある場合は「ファイル追加」ボタンで追加
+
+3. **オプション設定タブ**
+   - CC、BCC、Reply-Toを入力（オプション）
+   - 送信間隔（秒）を設定
+
+4. **送信実行タブ**
+   - 「送信内容をプレビュー」ボタンをクリックして内容を確認
+   - 「メール送信開始」ボタンをクリックして送信開始
+   - プログレスバーとログで進捗を確認
+
+### GUI版の特徴
+
+- **ファイル選択ダイアログ**: ファイルパスを手動で入力する必要がありません
+- **プレビュー機能**: 送信前に内容を確認できます
+- **リアルタイム進捗**: プログレスバーで送信状況を視覚的に確認
+- **詳細ログ**: 送信成功/失敗の詳細をリアルタイムで表示
+- **エラーハンドリング**: わかりやすいエラーメッセージを表示
+
+## スタンドアロン実行ファイルの作成
+
+Pythonがインストールされていない環境でも実行できるスタンドアロン実行ファイル（Windows: .exe、Linux/Mac: バイナリ）を作成できます。
+
+### 自動ビルド（推奨）
+
+#### Windows
+```cmd
+build_executables.bat
+```
+
+#### Linux/Mac
+```bash
+chmod +x build_executables.sh
+./build_executables.sh
+```
+
+### 手動ビルド
+
+1. PyInstallerをインストール：
+   ```bash
+   pip install pyinstaller customtkinter chardet
+   ```
+
+2. 実行ファイルを作成：
+   ```bash
+   # 汎用版GUI
+   pyinstaller --onefile --windowed --name="EmailBulkSender" email_bulk_sender_gui.py
+
+   # Gmail専用版GUI
+   pyinstaller --onefile --windowed --name="GmailBulkSender" gmail_bulk_sender_gui.py
+   ```
+
+3. 実行ファイルは `dist/` ディレクトリに作成されます
+
+詳細は [BUILD_GUIDE.md](BUILD_GUIDE.md) を参照してください。
+
+### 実行ファイルの配布
+
+作成された実行ファイル（`dist/EmailBulkSender` または `dist/GmailBulkSender`）を配布すれば、Pythonがインストールされていない環境でも実行できます。
+
+**注意事項：**
+- Windows用の.exeファイルを作成するには、Windows環境でビルドする必要があります
+- Linux用のバイナリを作成するには、Linux環境でビルドする必要があります
+- Mac用のバイナリを作成するには、Mac環境でビルドする必要があります
+
 ## License
 
 This script is free to use and modify.
@@ -917,5 +1048,5 @@ For issues or questions, please create an Issue.
 ---
 
 **Created**: 23 September 2025
-**Version**: 1.0
-```
+**Updated**: 5 November 2025
+**Version**: 2.0 (GUI版追加)
