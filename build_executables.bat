@@ -1,41 +1,41 @@
 @echo off
-REM メール一括送信ツール - 実行ファイルビルドスクリプト（Windows版）
+REM Email Bulk Sender Tool - Build Script for Windows
 
-echo === メール一括送信ツール ビルドスクリプト ===
+echo === Email Bulk Sender Build Script ===
 echo.
 
-REM 必要なパッケージの確認とインストール
-echo 必要なパッケージを確認中...
+REM Check and install required packages
+echo Checking required packages...
 pip list | findstr /C:"pyinstaller" >nul
 if errorlevel 1 (
-    echo PyInstallerがインストールされていません。インストールします...
+    echo PyInstaller is not installed. Installing...
     pip install pyinstaller
 )
 
 pip list | findstr /C:"customtkinter" >nul
 if errorlevel 1 (
-    echo CustomTkinterがインストールされていません。インストールします...
+    echo CustomTkinter is not installed. Installing...
     pip install customtkinter
 )
 
 pip list | findstr /C:"chardet" >nul
 if errorlevel 1 (
-    echo chardetがインストールされていません。インストールします...
+    echo chardet is not installed. Installing...
     pip install chardet
 )
 
 echo.
-echo ビルドを開始します...
+echo Starting build process...
 echo.
 
-REM 既存のビルドファイルをクリーンアップ
+REM Clean up existing build files
 if exist build (
-    echo 既存のbuildディレクトリを削除中...
+    echo Removing existing build directory...
     rmdir /s /q build
 )
 
 if exist dist (
-    echo 既存のdistディレクトリを削除中...
+    echo Removing existing dist directory...
     rmdir /s /q dist
 )
 
@@ -48,34 +48,34 @@ if exist GmailBulkSender.spec (
 )
 
 echo.
-echo 1/2: EmailBulkSender（汎用版）をビルド中...
+echo 1/2: Building EmailBulkSender (Generic version)...
 pyinstaller --onefile --windowed --name="EmailBulkSender" email_bulk_sender_gui.py
 
 if errorlevel 1 (
-    echo × EmailBulkSenderのビルドに失敗しました
+    echo [FAILED] EmailBulkSender build failed
     pause
     exit /b 1
 )
-echo ✓ EmailBulkSenderのビルドが完了しました
+echo [SUCCESS] EmailBulkSender build completed
 
 echo.
-echo 2/2: GmailBulkSender（Gmail専用版）をビルド中...
+echo 2/2: Building GmailBulkSender (Gmail version)...
 pyinstaller --onefile --windowed --name="GmailBulkSender" gmail_bulk_sender_gui.py
 
 if errorlevel 1 (
-    echo × GmailBulkSenderのビルドに失敗しました
+    echo [FAILED] GmailBulkSender build failed
     pause
     exit /b 1
 )
-echo ✓ GmailBulkSenderのビルドが完了しました
+echo [SUCCESS] GmailBulkSender build completed
 
 echo.
-echo === ビルド完了 ===
+echo === Build Complete ===
 echo.
-echo 実行ファイルは dist\ ディレクトリに作成されました:
+echo Executables created in dist\ directory:
 dir dist\*.exe
 echo.
-echo Windows用の実行ファイル（.exe）が作成されました。
-echo ダブルクリックで起動できます。
+echo Windows executable files (.exe) have been created.
+echo You can run them by double-clicking.
 echo.
 pause

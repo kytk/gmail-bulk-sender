@@ -6,28 +6,28 @@ CSVリストに基づいた個別対応のメールを一斉送信するツー�
 
 ### CLI版（コマンドライン）
 
-1. **gmail_bulk_sender.py** - Gmail専用版
-   - Gmail SMTPサーバーに特化
-   - Gmailアプリパスワードを使用
-   - 設定が簡単で、Gmailユーザーにおすすめ
-
-2. **email_bulk_sender.py** - 汎用版
+1. **email_bulk_sender.py** - 汎用版
    - 任意のSMTPサーバーに対応（Gmail、Outlook、独自メールサーバーなど）
    - SMTPサーバー、ポート、認証情報を自由に設定可能
    - SSL/TLS両方に対応
    - 送信元表示名のカスタマイズが可能
    - 設定ファイルでデフォルト値を事前設定できる
 
+2. **gmail_bulk_sender.py** - Gmail専用版
+   - Gmail SMTPサーバーに特化
+   - Gmailアプリパスワードを使用
+   - 設定が簡単で、Gmailユーザーにおすすめ
+
 ### GUI版（グラフィカルユーザーインターフェース）
 
-3. **email_bulk_sender_gui.py** - 汎用版GUI
+1. **email_bulk_sender_gui.py** - 汎用版GUI
    - 視覚的に操作できるGUIアプリケーション
    - ファイル選択ダイアログで簡単にファイルを指定
    - リアルタイムの進捗表示とログ表示
    - 送信前のプレビュー機能
    - コマンドラインに不慣れな方におすすめ
 
-4. **gmail_bulk_sender_gui.py** - Gmail専用版GUI
+2. **gmail_bulk_sender_gui.py** - Gmail専用版GUI
    - Gmail専用のGUIアプリケーション
    - 設定項目が少なく、より簡単に使用可能
 
@@ -55,12 +55,14 @@ Pythonがインストールされていない環境でも実行可能です。�
 - [セットアップ](#セットアップ)
 - [ファイルの準備](#ファイルの準備)
 - [使い方（CLI版）](#使い方cli版)
-- [GUI版の使い方](#gui版の使い方)
-- [スタンドアロン実行ファイルの作成](#スタンドアロン実行ファイルの作成)
 - [トラブルシューティング](#トラブルシューティング)
 - [注意事項](#注意事項)
 - [よくある質問](#よくある質問)
 - [汎用版(email_bulk_sender.py)](#汎用版email_bulk_senderpy)
+- [GUI版の使い方](#gui版の使い方)
+- [スタンドアロン実行ファイルの作成](#スタンドアロン実行ファイルの作成)
+- [ライセンス](#ライセンス)
+- [サポート](#サポート)
 
 ## 機能
 
@@ -98,8 +100,8 @@ Pythonがインストールされていない環境でも実行可能です。�
 
 ```bash
 # リポジトリをクローン、またはファイルをダウンロード
-git clone https://github.com/kytk/gmail-bulk-sender.git
-cd gmail-bulk-sender
+git clone https://github.com/kytk/email-bulk-sender.git
+cd email-bulk-sender
 
 # または、bulk_email_sender.py を直接ダウンロード
 ```
@@ -136,7 +138,7 @@ cd gmail-bulk-sender
 プロジェクトフォルダに以下のファイルを配置します：
 
 ```
-gmail-bulk-sender/
+email-bulk-sender/
 ├── bulk_email_sender.py  # メインスクリプト
 ├── list.csv              # 受信者リスト
 ├── body.txt              # メールテンプレート
@@ -345,7 +347,7 @@ A: 現在のバージョンはテキストメールのみ対応。HTMLメール�
 
 ### Q: 添付ファイルを送れますか？
 
-A: 現在のバージョンは未対応。添付ファイル機能が必要な場合は、スクリプトの拡張が必要です。
+A: はい、対応しています。GUI版では「ファイル選択タブ」で添付ファイルを追加できます。CLI版でも添付ファイル機能が実装されています。
 
 ### Q: 送信間隔を変更できますか？
 
@@ -479,9 +481,106 @@ ssl.SSLError: [SSL: WRONG_VERSION_NUMBER]
 - ポート465の場合はSSL、587の場合はTLSが使用されます
 - ポート番号とサーバー設定の組み合わせを確認
 
+## GUI版の使い方
+
+### 必要なパッケージ
+
+GUI版を使用する場合、追加のパッケージが必要です：
+
+```bash
+pip install customtkinter chardet
+```
+
+### 起動方法
+
+#### 汎用版GUI
+```bash
+python email_bulk_sender_gui.py
+```
+
+#### Gmail専用版GUI
+```bash
+python gmail_bulk_sender_gui.py
+```
+
+### 操作手順
+
+1. **基本設定タブ**
+   - SMTPサーバー情報（汎用版）またはGmailアカウント情報（Gmail版）を入力
+   - メールアドレスとパスワードを入力
+   - 送信元表示名を入力（オプション）
+
+2. **ファイル選択タブ**
+   - 「ファイル選択」ボタンをクリックして、受信者リストCSVファイルを選択
+   - 「ファイル選択」ボタンをクリックして、メールテンプレートファイルを選択
+   - 添付ファイルがある場合は「ファイル追加」ボタンで追加
+
+3. **オプション設定タブ**
+   - CC、BCC、Reply-Toを入力（オプション）
+   - 送信間隔（秒）を設定
+
+4. **送信実行タブ**
+   - 「送信内容をプレビュー」ボタンをクリックして内容を確認
+   - 「メール送信開始」ボタンをクリックして送信開始
+   - プログレスバーとログで進捗を確認
+
+### GUI版の特徴
+
+- **ファイル選択ダイアログ**: ファイルパスを手動で入力する必要がありません
+- **プレビュー機能**: 送信前に内容を確認できます
+- **リアルタイム進捗**: プログレスバーで送信状況を視覚的に確認
+- **詳細ログ**: 送信成功/失敗の詳細をリアルタイムで表示
+- **エラーハンドリング**: わかりやすいエラーメッセージを表示
+
+## スタンドアロン実行ファイルの作成
+
+Pythonがインストールされていない環境でも実行できるスタンドアロン実行ファイル（Windows: .exe、Linux/Mac: バイナリ）を作成できます。
+
+### 自動ビルド（推奨）
+
+#### Windows
+```cmd
+build_executables.bat
+```
+
+#### Linux/Mac
+```bash
+chmod +x build_executables.sh
+./build_executables.sh
+```
+
+### 手動ビルド
+
+1. PyInstallerをインストール：
+   ```bash
+   pip install pyinstaller customtkinter chardet
+   ```
+
+2. 実行ファイルを作成：
+   ```bash
+   # 汎用版GUI
+   pyinstaller --onefile --windowed --name="EmailBulkSender" email_bulk_sender_gui.py
+
+   # Gmail専用版GUI
+   pyinstaller --onefile --windowed --name="GmailBulkSender" gmail_bulk_sender_gui.py
+   ```
+
+3. 実行ファイルは `dist/` ディレクトリに作成されます
+
+詳細は [BUILD_GUIDE.md](BUILD_GUIDE.md) を参照してください。
+
+### 実行ファイルの配布
+
+作成された実行ファイル（`dist/EmailBulkSender` または `dist/GmailBulkSender`）を配布すれば、Pythonがインストールされていない環境でも実行できます。
+
+**注意事項：**
+- Windows用の.exeファイルを作成するには、Windows環境でビルドする必要があります
+- Linux用のバイナリを作成するには、Linux環境でビルドする必要があります
+- Mac用のバイナリを作成するには、Mac環境でビルドする必要があります
+
 ## ライセンス
 
-このスクリプトは自由に使用・改変できます。
+このプロジェクトはMITライセンスの下でライセンスされています。詳細は[LICENSE](LICENSE)ファイルを参照してください。
 
 ## サポート
 
@@ -494,41 +593,65 @@ ssl.SSLError: [SSL: WRONG_VERSION_NUMBER]
 
 ---
 
-# Gmail Bulk Sender Tool
+# Email Bulk Sender Tool
 
-A Python script for sending personalized bulk emails via Gmail based on a CSV recipient list.
+A tool for sending personalized bulk emails based on a CSV recipient list. Provides both CLI (command line) and GUI versions.
 
-## Script Types
+## Tool Types
 
-This repository contains two scripts:
+### CLI Version (Command Line)
 
-1. **bulk_email_sender.py** - Gmail-specific version
-   - Specialized for Gmail SMTP server
-   - Uses Gmail App Password
-   - Easy to set up, recommended for Gmail users
-
-2. **email_bulk_sender.py** - Generic version
+1. **email_bulk_sender.py** - Generic version
    - Supports any SMTP server (Gmail, Outlook, custom mail servers, etc.)
    - Flexible SMTP server, port, and authentication settings
    - Supports both SSL/TLS
    - Customizable sender display name
    - Pre-configurable default values in settings section
 
-**Which one to use:**
-- **Gmail only** → `bulk_email_sender.py` (easier)
-- **Non-Gmail mail servers** → `email_bulk_sender.py` (flexible)
-- **Need custom sender display name** → `email_bulk_sender.py`
+2. **gmail_bulk_sender.py** - Gmail-specific version
+   - Specialized for Gmail SMTP server
+   - Uses Gmail App Password
+   - Easy to set up, recommended for Gmail users
 
-The following documentation primarily covers `bulk_email_sender.py` (Gmail-specific version). For `email_bulk_sender.py` usage, see [Generic Version Usage](#generic-version-email_bulk_senderpy).
+### GUI Version (Graphical User Interface)
+
+1. **email_bulk_sender_gui.py** - Generic GUI version
+   - Visual and intuitive GUI application
+   - Easy file selection with file dialogs
+   - Real-time progress display and logs
+   - Email preview before sending
+   - Recommended for users unfamiliar with command line
+
+2. **gmail_bulk_sender_gui.py** - Gmail-specific GUI version
+   - Gmail-dedicated GUI application
+   - Fewer configuration items, easier to use
+
+### Standalone Executables (.exe / Binary)
+
+- **EmailBulkSender** - Generic GUI executable
+- **GmailBulkSender** - Gmail-specific GUI executable
+
+Can run on systems without Python installed. See [BUILD_GUIDE.md](BUILD_GUIDE.md) for details.
+
+**Which one to use:**
+- **First time / Prefer GUI** → GUI version (`email_bulk_sender_gui.py` or `gmail_bulk_sender_gui.py`)
+- **Comfortable with command line** → CLI version (`email_bulk_sender.py` or `gmail_bulk_sender.py`)
+- **No Python environment** → Standalone executables (dist/EmailBulkSender or dist/GmailBulkSender)
+- **Gmail only** → Gmail-specific version
+- **Non-Gmail mail servers** → Generic version
+
+The following documentation primarily covers the CLI version. For GUI version usage, see [GUI Version Usage](#gui-version-usage).
 
 ## Table of Contents
 
-- [Script Types](#script-types)
+- [Tool Types](#tool-types)
 - [Features](#features)
 - [Requirements](#requirements)
 - [Setup](#setup)
 - [File Preparation](#file-preparation)
-- [Usage](#usage)
+- [Usage (CLI Version)](#usage-cli-version)
+- [GUI Version Usage](#gui-version-usage)
+- [Standalone Executable Creation](#standalone-executable-creation)
 - [Troubleshooting](#troubleshooting)
 - [Important Notes](#important-notes)
 - [FAQ](#faq)
@@ -536,13 +659,23 @@ The following documentation primarily covers `bulk_email_sender.py` (Gmail-speci
 
 ## Features
 
+### Common Features
 - Load recipient list (company name, name, email address) from CSV file
 - Automatically replace `{企業}` (company) and `{氏名}` (name) placeholders with individual recipient information
 - Manage subject and body in a single template file
 - Support for CC, BCC, and Reply-To
-- Secure sending via Gmail SMTP
+- Support for file attachments
+- Automatic character encoding detection (UTF-8, Shift_JIS, EUC-JP, etc.)
 - Rate limiting protection (automatic sending interval adjustment)
 - Real-time sending status display
+
+### Additional GUI Features
+- Visual and intuitive interface
+- File selection dialogs
+- Email preview before sending
+- Real-time progress bar
+- Detailed sending log display
+- Clear error messages
 
 ## Requirements
 
@@ -561,7 +694,7 @@ Only standard libraries are used, so no additional installation is required.
 ```bash
 # Clone the repository or download the files
 git clone <repository-url>
-cd gmail-bulk-sender
+cd email-bulk-sender
 
 # Or download bulk_email_sender.py directly
 ```
@@ -598,7 +731,7 @@ cd gmail-bulk-sender
 Place the following files in your project folder:
 
 ```
-gmail-bulk-sender/
+email-bulk-sender/
 ├── bulk_email_sender.py  # Main script
 ├── list.csv              # Recipient list
 ├── body.txt              # Email template
@@ -668,7 +801,7 @@ Tel: 03-1234-5678
 - **Line 2**: Empty line (required)
 - **Line 3 onwards**: Body (can use `{企業}` for company name and `{氏名}` for recipient name)
 
-## Usage
+## Usage (CLI Version)
 
 ### 1. Run the Script
 
@@ -806,7 +939,7 @@ A: The current version only supports plain text. For HTML emails, change the sec
 
 ### Q: Can I send attachments?
 
-A: Not supported in the current version. Script extension is required for attachment functionality.
+A: Yes, it is supported. In the GUI version, you can add attachments in the "File Selection Tab". The CLI version also has attachment functionality implemented.
 
 ### Q: Can I change the sending interval?
 
@@ -940,62 +1073,62 @@ ssl.SSLError: [SSL: WRONG_VERSION_NUMBER]
 - Port 465 uses SSL, port 587 uses TLS
 - Verify port number and server configuration combination
 
-## GUI版の使い方
+## GUI Version Usage
 
-### 必要なパッケージ
+### Required Packages
 
-GUI版を使用する場合、追加のパッケージが必要です：
+For GUI version, additional packages are required:
 
 ```bash
 pip install customtkinter chardet
 ```
 
-### 起動方法
+### How to Launch
 
-#### 汎用版GUI
+#### Generic GUI Version
 ```bash
 python email_bulk_sender_gui.py
 ```
 
-#### Gmail専用版GUI
+#### Gmail-specific GUI Version
 ```bash
 python gmail_bulk_sender_gui.py
 ```
 
-### 操作手順
+### Operating Instructions
 
-1. **基本設定タブ**
-   - SMTPサーバー情報（汎用版）またはGmailアカウント情報（Gmail版）を入力
-   - メールアドレスとパスワードを入力
-   - 送信元表示名を入力（オプション）
+1. **Basic Settings Tab**
+   - Enter SMTP server information (generic version) or Gmail account information (Gmail version)
+   - Enter email address and password
+   - Enter sender display name (optional)
 
-2. **ファイル選択タブ**
-   - 「ファイル選択」ボタンをクリックして、受信者リストCSVファイルを選択
-   - 「ファイル選択」ボタンをクリックして、メールテンプレートファイルを選択
-   - 添付ファイルがある場合は「ファイル追加」ボタンで追加
+2. **File Selection Tab**
+   - Click "File Selection" button to select recipient list CSV file
+   - Click "File Selection" button to select email template file
+   - If you have attachments, click "Add File" button to add them
 
-3. **オプション設定タブ**
-   - CC、BCC、Reply-Toを入力（オプション）
-   - 送信間隔（秒）を設定
+3. **Options Tab**
+   - Enter CC, BCC, Reply-To (optional)
+   - Set sending interval (seconds)
 
-4. **送信実行タブ**
-   - 「送信内容をプレビュー」ボタンをクリックして内容を確認
-   - 「メール送信開始」ボタンをクリックして送信開始
-   - プログレスバーとログで進捗を確認
+4. **Send Tab**
+   - Click "Preview Email Content" button to review the content
+   - Click "Start Sending" button to begin sending
+   - Monitor progress with progress bar and logs
 
-### GUI版の特徴
+### GUI Version Features
 
-- **ファイル選択ダイアログ**: ファイルパスを手動で入力する必要がありません
-- **プレビュー機能**: 送信前に内容を確認できます
-- **リアルタイム進捗**: プログレスバーで送信状況を視覚的に確認
-- **詳細ログ**: 送信成功/失敗の詳細をリアルタイムで表示
-- **エラーハンドリング**: わかりやすいエラーメッセージを表示
+- **File Selection Dialogs**: No need to manually enter file paths
+- **Preview Function**: Review content before sending
+- **Real-time Progress**: Visual progress bar for sending status
+- **Detailed Logs**: Real-time display of sending success/failure details
+- **Error Handling**: Clear and understandable error messages
 
-## スタンドアロン実行ファイルの作成
+## Standalone Executable Creation
 
-Pythonがインストールされていない環境でも実行できるスタンドアロン実行ファイル（Windows: .exe、Linux/Mac: バイナリ）を作成できます。
+You can create standalone executables (Windows: .exe, Linux/Mac: binary) that can run on systems without Python installed.
 
-### 自動ビルド（推奨）
+### Automatic Build (Recommended)
 
 #### Windows
 ```cmd
@@ -1008,38 +1141,38 @@ chmod +x build_executables.sh
 ./build_executables.sh
 ```
 
-### 手動ビルド
+### Manual Build
 
-1. PyInstallerをインストール：
+1. Install PyInstaller:
    ```bash
    pip install pyinstaller customtkinter chardet
    ```
 
-2. 実行ファイルを作成：
+2. Create executables:
    ```bash
-   # 汎用版GUI
+   # Generic GUI version
    pyinstaller --onefile --windowed --name="EmailBulkSender" email_bulk_sender_gui.py
 
-   # Gmail専用版GUI
+   # Gmail-specific GUI version
    pyinstaller --onefile --windowed --name="GmailBulkSender" gmail_bulk_sender_gui.py
    ```
 
-3. 実行ファイルは `dist/` ディレクトリに作成されます
+3. Executables will be created in the `dist/` directory
 
-詳細は [BUILD_GUIDE.md](BUILD_GUIDE.md) を参照してください。
+See [BUILD_GUIDE.md](BUILD_GUIDE.md) for details.
 
-### 実行ファイルの配布
+### Distributing Executables
 
-作成された実行ファイル（`dist/EmailBulkSender` または `dist/GmailBulkSender`）を配布すれば、Pythonがインストールされていない環境でも実行できます。
+You can distribute the created executables (`dist/EmailBulkSender` or `dist/GmailBulkSender`), which can run on systems without Python installed.
 
-**注意事項：**
-- Windows用の.exeファイルを作成するには、Windows環境でビルドする必要があります
-- Linux用のバイナリを作成するには、Linux環境でビルドする必要があります
-- Mac用のバイナリを作成するには、Mac環境でビルドする必要があります
+**Important Notes:**
+- To create Windows .exe files, you must build on a Windows environment
+- To create Linux binaries, you must build on a Linux environment
+- To create Mac binaries, you must build on a Mac environment
 
 ## License
 
-This script is free to use and modify.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
