@@ -1,0 +1,41 @@
+[Important] New Service Announcement - {企業} {氏名}
+
+Dear {氏名} at {企業},
+
+Thank you for your continued support.
+This is the Sales Department at Sample Corporation.
+
+We hope {企業} is prospering and doing well.
+
+We are pleased to announce the release of our new service "Email Bulk Sender Tool"
+and would like to introduce it to you.
+
+■ Service Overview
+This is a tool for sending personalized bulk emails based on a CSV recipient list.
+
+【Main Features】
+- Load recipient list from CSV file
+- Automatically replace {企業} (company) and {氏名} (name) placeholders with recipient information
+- Support for CC, BCC, and Reply-To
+- Support for file attachments
+- Multi-language support (Japanese/English)
+
+【Highlights】
+✓ Works with Python standard library only (no additional installation required)
+✓ Provides both CLI and GUI versions
+✓ Open source (MIT License)
+
+For more details, please visit:
+https://github.com/kytk/email-bulk-sender
+
+If you have any questions, please feel free to contact us.
+
+We look forward to your continued support.
+
+────────────────────────
+Sample Corporation
+Sales Department - Taro Yamada
+Email: info@example.com
+Tel: +81-3-1234-5678
+Web: https://example.com
+────────────────────────

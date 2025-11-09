@@ -57,33 +57,59 @@ if [ -d "dist" ]; then
     rm -rf dist
 fi
 
-if [ -f "EmailBulkSender.spec" ]; then
-    rm EmailBulkSender.spec
+# プラットフォームとアーキテクチャの検出
+OS_TYPE=$(uname -s)
+ARCH=$(uname -m)
+
+if [ "$OS_TYPE" = "Linux" ]; then
+    SUFFIX="_lnx"
+    PLATFORM_NAME="Linux"
+elif [ "$OS_TYPE" = "Darwin" ]; then
+    if [ "$ARCH" = "arm64" ]; then
+        SUFFIX="_mac_arm64"
+        PLATFORM_NAME="macOS (ARM64)"
+    elif [ "$ARCH" = "x86_64" ]; then
+        SUFFIX="_mac_amd64"
+        PLATFORM_NAME="macOS (AMD64)"
+    else
+        SUFFIX="_mac_${ARCH}"
+        PLATFORM_NAME="macOS (${ARCH})"
+    fi
+else
+    SUFFIX="_${OS_TYPE}"
+    PLATFORM_NAME="${OS_TYPE}"
 fi
 
-if [ -f "GmailBulkSender.spec" ]; then
-    rm GmailBulkSender.spec
+echo "検出されたプラットフォーム: ${PLATFORM_NAME}"
+echo ""
+
+if [ -f "EmailBulkSender${SUFFIX}.spec" ]; then
+    rm "EmailBulkSender${SUFFIX}.spec"
+fi
+
+if [ -f "GmailBulkSender${SUFFIX}.spec" ]; then
+    rm "GmailBulkSender${SUFFIX}.spec"
 fi
 
 echo ""
-echo "1/2: EmailBulkSender（汎用版）をビルド中..."
-pyinstaller --onefile --windowed --name="EmailBulkSender" email_bulk_sender_gui.py
+echo "1/2: EmailBulkSender${SUFFIX}（汎用版）をビルド中..."
+pyinstaller --onefile --windowed --name="EmailBulkSender${SUFFIX}" email_bulk_sender_gui.py
 
 if [ $? -eq 0 ]; then
-    echo "✓ EmailBulkSenderのビルドが完了しました"
+    echo "✓ EmailBulkSender${SUFFIX}のビルドが完了しました"
 else
-    echo "✗ EmailBulkSenderのビルドに失敗しました"
+    echo "✗ EmailBulkSender${SUFFIX}のビルドに失敗しました"
     exit 1
 fi
 
 echo ""
-echo "2/2: GmailBulkSender（Gmail専用版）をビルド中..."
-pyinstaller --onefile --windowed --name="GmailBulkSender" gmail_bulk_sender_gui.py
+echo "2/2: GmailBulkSender${SUFFIX}（Gmail専用版）をビルド中..."
+pyinstaller --onefile --windowed --name="GmailBulkSender${SUFFIX}" gmail_bulk_sender_gui.py
 
 if [ $? -eq 0 ]; then
-    echo "✓ GmailBulkSenderのビルドが完了しました"
+    echo "✓ GmailBulkSender${SUFFIX}のビルドが完了しました"
 else
-    echo "✗ GmailBulkSenderのビルドに失敗しました"
+    echo "✗ GmailBulkSender${SUFFIX}のビルドに失敗しました"
     exit 1
 fi
 
@@ -93,6 +119,63 @@ echo ""
 echo "実行ファイルは dist/ ディレクトリに作成されました:"
 ls -lh dist/
 echo ""
-echo "注意: Linux環境でビルドした場合、実行ファイルはLinux用です。"
-echo "      Windows用の.exeファイルを作成するには、Windows環境でこのスクリプトを実行してください。"
+
+# Create distribution packages with samples
+echo ""
+echo "配布パッケージを作成中..."
+echo ""
+
+# Create temporary directories for packaging
+mkdir -p "dist/EmailBulkSender${SUFFIX}_package"
+mkdir -p "dist/GmailBulkSender${SUFFIX}_package"
+
+# Copy files for EmailBulkSender package
+cp "dist/EmailBulkSender${SUFFIX}" "dist/EmailBulkSender${SUFFIX}_package/"
+cp -r examples "dist/EmailBulkSender${SUFFIX}_package/"
+cp README.md "dist/EmailBulkSender${SUFFIX}_package/"
+cp LICENSE "dist/EmailBulkSender${SUFFIX}_package/"
+
+# Copy files for GmailBulkSender package
+cp "dist/GmailBulkSender${SUFFIX}" "dist/GmailBulkSender${SUFFIX}_package/"
+cp -r examples "dist/GmailBulkSender${SUFFIX}_package/"
+cp README.md "dist/GmailBulkSender${SUFFIX}_package/"
+cp LICENSE "dist/GmailBulkSender${SUFFIX}_package/"
+
+# Create zip files
+echo "Creating EmailBulkSender${SUFFIX}.zip..."
+cd "dist/EmailBulkSender${SUFFIX}_package"
+zip -r "../EmailBulkSender${SUFFIX}.zip" .
+cd ../..
+
+echo "Creating GmailBulkSender${SUFFIX}.zip..."
+cd "dist/GmailBulkSender${SUFFIX}_package"
+zip -r "../GmailBulkSender${SUFFIX}.zip" .
+cd ../..
+
+# Clean up temporary directories
+rm -rf "dist/EmailBulkSender${SUFFIX}_package"
+rm -rf "dist/GmailBulkSender${SUFFIX}_package"
+
+echo ""
+echo "=== パッケージング完了 ==="
+echo ""
+echo "作成された配布パッケージ:"
+ls -lh dist/*.zip
+echo ""
+echo "プラットフォーム: ${PLATFORM_NAME}"
+echo "作成されたファイル:"
+echo "  - EmailBulkSender${SUFFIX}"
+echo "  - EmailBulkSender${SUFFIX}.zip"
+echo "  - GmailBulkSender${SUFFIX}"
+echo "  - GmailBulkSender${SUFFIX}.zip"
+echo ""
+echo "パッケージ内容:"
+echo "  - 実行ファイル"
+echo "  - サンプルファイル (examples/)"
+echo "  - README.md"
+echo "  - LICENSE"
+echo ""
+echo "注意: 各プラットフォーム専用の実行ファイルです。"
+echo "      他のプラットフォーム用のファイルを作成するには、そのプラットフォームでビルドしてください。"
+echo "      .zipファイルをPythonがインストールされていないユーザーに配布できます。"
 echo ""

@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# PyInstaller
+build/
+dist/
+*.spec
+*.zip
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Application-specific config files
+.email_bulk_sender_config.json
+.gmail_bulk_sender_config.json
+
+# User data (avoid committing sensitive information)
+list.csv
+body.txt
+
+# But allow sample files in examples/
+!examples/*.sample
+!examples/README.md
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Secrets and credentials
+*.env
+.env
+credentials.json
+*password*
+*secret*
+
+# Attachments (if testing)
+attachments/
+test_files/

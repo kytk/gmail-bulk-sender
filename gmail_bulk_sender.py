@@ -12,6 +12,8 @@ import os
 from urllib.parse import quote
 import mimetypes
 import chardet
+import argparse
+from i18n import get_i18n
 
 # ==================== 設定セクション ====================
 # ここで送信元情報を設定してください
@@ -67,12 +69,13 @@ class GmailBulkSender:
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587
     
-    def read_recipients(self, csv_file):
+    def read_recipients(self, csv_file, i18n=None):
         """
         CSVファイルから受信者リストを読み込む（文字コード自動検出）
 
         Args:
             csv_file: CSVファイルのパス（企業,氏名,メールアドレスの形式）
+            i18n: 国際化インスタンス
 
         Returns:
             受信者の辞書リスト [{'company': '株式会社ABC', 'name': '山田太郎', 'email': 'yamada@example.com'}, ...]
@@ -83,7 +86,11 @@ class GmailBulkSender:
             detected = chardet.detect(raw_data)
             encoding = detected['encoding']
             confidence = detected['confidence']
-            print(f"CSVファイルの文字コード: {encoding} (信頼度: {confidence:.2%})")
+            # i18nがない場合はデフォルトメッセージ（後方互換性のため）
+            if i18n:
+                print(f"CSV encoding: {encoding} (confidence: {confidence:.2%})")
+            else:
+                print(f"CSVファイルの文字コード: {encoding} (信頼度: {confidence:.2%})")
 
         # 検出された文字コードでファイルを読み込む
         recipients = []
@@ -102,12 +109,13 @@ class GmailBulkSender:
                 })
         return recipients
     
-    def read_email_template(self, template_file):
+    def read_email_template(self, template_file, i18n=None):
         """
         メールテンプレートを読み込む（件名と本文を分離、文字コード自動検出）
 
         Args:
             template_file: テンプレートファイルのパス
+            i18n: 国際化インスタンス
 
         Returns:
             (subject, body) のタプル
@@ -118,7 +126,11 @@ class GmailBulkSender:
             detected = chardet.detect(raw_data)
             encoding = detected['encoding']
             confidence = detected['confidence']
-            print(f"テンプレートファイルの文字コード: {encoding} (信頼度: {confidence:.2%})")
+            # i18nがない場合はデフォルトメッセージ（後方互換性のため）
+            if i18n:
+                print(f"Template encoding: {encoding} (confidence: {confidence:.2%})")
+            else:
+                print(f"テンプレートファイルの文字コード: {encoding} (信頼度: {confidence:.2%})")
 
         # 検出された文字コードでファイルを読み込む
         with open(template_file, 'r', encoding=encoding) as f:
@@ -128,7 +140,11 @@ class GmailBulkSender:
         lines = content.split('\n')
 
         if len(lines) < 3:
-            raise ValueError("テンプレートファイルの形式が正しくありません。1行目: 件名、2行目: 空行、3行目以降: 本文")
+            # i18nがない場合はデフォルトメッセージ（後方互換性のため）
+            if i18n:
+                raise ValueError("Invalid template format. Line 1: Subject, Line 2: Empty, Line 3+: Body")
+            else:
+                raise ValueError("テンプレートファイルの形式が正しくありません。1行目: 件名、2行目: 空行、3行目以降: 本文")
 
         subject = lines[0].strip()
         # 2行目をスキップして3行目以降を本文とする
@@ -218,7 +234,7 @@ class GmailBulkSender:
         return msg
     
     def send_bulk_emails(self, csv_file, template_file,
-                        cc=None, bcc=None, reply_to=None, attachments=None, delay=1):
+                        cc=None, bcc=None, reply_to=None, attachments=None, delay=1, i18n=None):
         """
         一斉送信を実行
 
@@ -230,31 +246,57 @@ class GmailBulkSender:
             reply_to: 返信先アドレス
             attachments: 添付ファイルパスのリスト
             delay: メール送信間隔（秒）
+            i18n: 国際化インスタンス
         """
         # 受信者リストとテンプレートを読み込み
-        recipients = self.read_recipients(csv_file)
-        subject_template, body_template = self.read_email_template(template_file)
-        
-        print(f"\n=== 送信内容確認 ===")
-        print(f"件名: {subject_template}")
-        print(f"送信先: {len(recipients)}件")
-        if self.sender_display_name:
-            print(f"送信元: {self.sender_display_name} <{self.gmail_address}>")
+        recipients = self.read_recipients(csv_file, i18n)
+        subject_template, body_template = self.read_email_template(template_file, i18n)
+
+        # 確認メッセージ（i18nがある場合は多言語対応、ない場合は日本語デフォルト）
+        if i18n:
+            print(i18n.get('cli_confirm_header'))
+            print(i18n.get('preview_subject', subject_template))
+            print(i18n.get('preview_recipients', len(recipients)))
+            if self.sender_display_name:
+                print(i18n.get('preview_sender', f"{self.sender_display_name} <{self.gmail_address}>"))
+            else:
+                print(i18n.get('preview_sender', self.gmail_address))
+            if cc:
+                print(i18n.get('preview_cc', cc))
+            if bcc:
+                print(i18n.get('preview_bcc', bcc))
+            if reply_to:
+                print(i18n.get('preview_reply_to', reply_to))
+            if attachments:
+                print(i18n.get('preview_attachments', ', '.join(attachments)))
         else:
-            print(f"送信元: {self.gmail_address}")
-        if cc:
-            print(f"CC: {cc}")
-        if bcc:
-            print(f"BCC: {bcc}")
-        if reply_to:
-            print(f"Reply-To: {reply_to}")
-        if attachments:
-            print(f"添付ファイル: {', '.join(attachments)}")
-        
+            print(f"\n=== 送信内容確認 ===")
+            print(f"件名: {subject_template}")
+            print(f"送信先: {len(recipients)}件")
+            if self.sender_display_name:
+                print(f"送信元: {self.sender_display_name} <{self.gmail_address}>")
+            else:
+                print(f"送信元: {self.gmail_address}")
+            if cc:
+                print(f"CC: {cc}")
+            if bcc:
+                print(f"BCC: {bcc}")
+            if reply_to:
+                print(f"Reply-To: {reply_to}")
+            if attachments:
+                print(f"添付ファイル: {', '.join(attachments)}")
+
         # 確認
-        confirm = input("\n送信を開始しますか？ (yes/no): ")
+        if i18n:
+            confirm = input(i18n.get('cli_confirm_send') + ": ")
+        else:
+            confirm = input("\n送信を開始しますか？ (yes/no): ")
+
         if confirm.lower() != 'yes':
-            print("送信をキャンセルしました。")
+            if i18n:
+                print(i18n.get('cli_cancelled'))
+            else:
+                print("送信をキャンセルしました。")
             return
         
         # SMTP接続
@@ -284,7 +326,11 @@ class GmailBulkSender:
                     # 送信
                     server.send_message(msg)
                     success_count += 1
-                    print(f"[{i}/{len(recipients)}] 送信成功: {recipient['company']} {recipient['name']} ({recipient['email']})")
+                    if i18n:
+                        print(i18n.get('send_success', i, len(recipients), recipient['company'],
+                                      recipient['name'], recipient['email']))
+                    else:
+                        print(f"[{i}/{len(recipients)}] 送信成功: {recipient['company']} {recipient['name']} ({recipient['email']})")
 
                     # 送信間隔を設定（Gmail制限対策）
                     if i < len(recipients):
@@ -292,81 +338,129 @@ class GmailBulkSender:
 
                 except Exception as e:
                     fail_count += 1
-                    print(f"[{i}/{len(recipients)}] 送信失敗: {recipient['company']} {recipient['name']} ({recipient['email']}) - エラー: {e}")
-            
+                    if i18n:
+                        print(i18n.get('send_failed', i, len(recipients), recipient['company'],
+                                      recipient['name'], recipient['email'], str(e)))
+                    else:
+                        print(f"[{i}/{len(recipients)}] 送信失敗: {recipient['company']} {recipient['name']} ({recipient['email']}) - エラー: {e}")
+
             server.quit()
-            
-            print(f"\n送信完了: 成功 {success_count}件, 失敗 {fail_count}件")
-            
+
+            if i18n:
+                print(f"\n{i18n.get('send_complete', success_count, fail_count)}")
+            else:
+                print(f"\n送信完了: 成功 {success_count}件, 失敗 {fail_count}件")
+
         except Exception as e:
-            print(f"SMTP接続エラー: {e}")
+            if i18n:
+                print(f"SMTP connection error: {e}")
+            else:
+                print(f"SMTP接続エラー: {e}")
 
 
 def main():
     """メイン処理"""
-    
+
+    # コマンドライン引数をパース
+    parser = argparse.ArgumentParser(description='Gmail Bulk Sender / Gmail一括送信ツール')
+    parser.add_argument('--lang', choices=['ja', 'en'], help='Language / 言語 (ja/en)')
+    args = parser.parse_args()
+
+    # i18nインスタンスを作成
+    i18n = get_i18n(args.lang)
+
     # Gmail設定
-    print("=== Gmail一斉送信ツール ===\n")
-    
+    print(i18n.get('cli_gmail_title') + "\n")
+
     # Gmailアドレスの取得（デフォルト値がある場合はそれを使用）
     if DEFAULT_GMAIL_ADDRESS:
         gmail_address = DEFAULT_GMAIL_ADDRESS
-        print(f"送信元Gmailアドレス: {gmail_address} (設定済み)")
+        if i18n.get_language() == 'ja':
+            print(f"送信元Gmailアドレス: {gmail_address} (設定済み)")
+        else:
+            print(f"Gmail Address: {gmail_address} (configured)")
     else:
-        gmail_address = input("送信元Gmailアドレス: ")
-    
+        gmail_address = input(i18n.get('cli_gmail_address') + ": ")
+
     # アプリパスワードの取得（デフォルト値がある場合はそれを使用）
     if DEFAULT_GMAIL_PASSWORD:
         gmail_password = DEFAULT_GMAIL_PASSWORD
-        print("Gmailアプリパスワード: ******** (設定済み)")
+        if i18n.get_language() == 'ja':
+            print("Gmailアプリパスワード: ******** (設定済み)")
+        else:
+            print("Gmail App Password: ******** (configured)")
     else:
-        gmail_password = getpass("Gmailアプリパスワード: ")
-    
+        gmail_password = getpass(i18n.get('cli_gmail_password') + ": ")
+
     # 送信元表示名の取得
     if SENDER_DISPLAY_NAME:
         sender_display_name = SENDER_DISPLAY_NAME
-        print(f"送信元表示名: {sender_display_name} (設定済み)")
+        if i18n.get_language() == 'ja':
+            print(f"送信元表示名: {sender_display_name} (設定済み)")
+        else:
+            print(f"Sender Display Name: {sender_display_name} (configured)")
     else:
-        sender_display_name = input("送信元表示名 (不要ならEnter): ").strip()
-    
+        sender_display_name = input(i18n.get('cli_sender_name') + ": ").strip()
+
     # ファイルと設定
     if DEFAULT_CSV_FILE:
         csv_file = DEFAULT_CSV_FILE
-        print(f"受信者リストCSVファイル: {csv_file} (設定済み)")
+        if i18n.get_language() == 'ja':
+            print(f"受信者リストCSVファイル: {csv_file} (設定済み)")
+        else:
+            print(f"CSV File: {csv_file} (configured)")
     else:
-        csv_file = input("受信者リストCSVファイル (デフォルト: list.csv): ") or "list.csv"
-    
+        csv_file = input(i18n.get('cli_csv_file') + ": ") or "list.csv"
+
     if DEFAULT_TEMPLATE_FILE:
         template_file = DEFAULT_TEMPLATE_FILE
-        print(f"メールテンプレートファイル: {template_file} (設定済み)")
+        if i18n.get_language() == 'ja':
+            print(f"メールテンプレートファイル: {template_file} (設定済み)")
+        else:
+            print(f"Template File: {template_file} (configured)")
     else:
-        template_file = input("メールテンプレートファイル (デフォルト: body.txt): ") or "body.txt"
-    
+        template_file = input(i18n.get('cli_template_file') + ": ") or "body.txt"
+
     # オプション設定
     if DEFAULT_CC is not None:
         cc = DEFAULT_CC if DEFAULT_CC else None
-        print(f"CC: {cc if cc else 'なし'} (設定済み)")
+        if i18n.get_language() == 'ja':
+            print(f"CC: {cc if cc else 'なし'} (設定済み)")
+        else:
+            print(f"CC: {cc if cc else 'None'} (configured)")
     else:
-        cc = input("CC (複数の場合はカンマ区切り、不要ならEnter): ").strip() or None
+        cc = input(i18n.get('cli_cc') + ": ").strip() or None
 
     if DEFAULT_BCC is not None:
         bcc = DEFAULT_BCC if DEFAULT_BCC else None
-        print(f"BCC: {bcc if bcc else 'なし'} (設定済み)")
+        if i18n.get_language() == 'ja':
+            print(f"BCC: {bcc if bcc else 'なし'} (設定済み)")
+        else:
+            print(f"BCC: {bcc if bcc else 'None'} (configured)")
     else:
-        bcc = input("BCC (複数の場合はカンマ区切り、不要ならEnter): ").strip() or None
+        bcc = input(i18n.get('cli_bcc') + ": ").strip() or None
 
     if DEFAULT_REPLY_TO is not None:
         reply_to = DEFAULT_REPLY_TO if DEFAULT_REPLY_TO else None
-        print(f"Reply-To: {reply_to if reply_to else 'なし'} (設定済み)")
+        if i18n.get_language() == 'ja':
+            print(f"Reply-To: {reply_to if reply_to else 'なし'} (設定済み)")
+        else:
+            print(f"Reply-To: {reply_to if reply_to else 'None'} (configured)")
     else:
-        reply_to = input("Reply-To (不要ならEnter): ").strip() or None
+        reply_to = input(i18n.get('cli_reply_to') + ": ").strip() or None
 
     # 添付ファイル設定
     if DEFAULT_ATTACHMENTS:
         attachments_input = DEFAULT_ATTACHMENTS
-        print(f"添付ファイル: {attachments_input} (設定済み)")
+        if i18n.get_language() == 'ja':
+            print(f"添付ファイル: {attachments_input} (設定済み)")
+        else:
+            print(f"Attachments: {attachments_input} (configured)")
     else:
-        attachments_input = input("添付ファイル (複数の場合はカンマ区切り、不要ならEnter): ").strip()
+        if i18n.get_language() == 'ja':
+            attachments_input = input("添付ファイル (複数の場合はカンマ区切り、不要ならEnter): ").strip()
+        else:
+            attachments_input = input("Attachments (comma-separated for multiple, press Enter to skip): ").strip()
 
     # 添付ファイルのリストを作成し、存在確認
     attachments = None
@@ -375,23 +469,36 @@ def main():
         # ファイルの存在確認
         for file_path in attachments:
             if not os.path.exists(file_path):
-                print(f"警告: ファイルが見つかりません: {file_path}")
-                confirm = input("このまま続行しますか？ (yes/no): ")
+                if i18n.get_language() == 'ja':
+                    print(f"警告: ファイルが見つかりません: {file_path}")
+                    confirm = input("このまま続行しますか？ (yes/no): ")
+                else:
+                    print(f"Warning: File not found: {file_path}")
+                    confirm = input("Continue anyway? (yes/no): ")
                 if confirm.lower() != 'yes':
-                    print("送信をキャンセルしました。")
+                    print(i18n.get('cli_cancelled'))
                     return
 
     # 送信遅延時間の取得
     if DEFAULT_SEND_DELAY:
         send_delay = DEFAULT_SEND_DELAY
-        print(f"送信間隔: {send_delay}秒 (設定済み)")
+        if i18n.get_language() == 'ja':
+            print(f"送信間隔: {send_delay}秒 (設定済み)")
+        else:
+            print(f"Send Delay: {send_delay} seconds (configured)")
     else:
-        delay_input = input("送信間隔（秒） (デフォルト: 5): ").strip()
+        if i18n.get_language() == 'ja':
+            delay_input = input("送信間隔（秒） (デフォルト: 5): ").strip()
+        else:
+            delay_input = input("Send Delay (seconds, default: 5): ").strip()
         if delay_input:
             try:
                 send_delay = float(delay_input)
             except ValueError:
-                print("警告: 入力された値が無効です。デフォルト5秒を使用します。")
+                if i18n.get_language() == 'ja':
+                    print("警告: 入力された値が無効です。デフォルト5秒を使用します。")
+                else:
+                    print("Warning: Invalid value. Using default 5 seconds.")
                 send_delay = 5
         else:
             send_delay = 5
@@ -405,7 +512,8 @@ def main():
         bcc=bcc,
         reply_to=reply_to,
         attachments=attachments,
-        delay=send_delay
+        delay=send_delay,
+        i18n=i18n
     )
 
 

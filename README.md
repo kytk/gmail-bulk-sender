@@ -33,15 +33,19 @@ CSVリストに基づいた個別対応のメールを一斉送信するツー�
 
 ### スタンドアロン実行ファイル（.exe / バイナリ）
 
-- **EmailBulkSender** - 汎用版GUI実行ファイル
-- **GmailBulkSender** - Gmail専用版GUI実行ファイル
+プラットフォーム別に以下の実行ファイルを作成できます：
+
+- **Windows**: `EmailBulkSender_win.exe`, `GmailBulkSender_win.exe`
+- **Linux**: `EmailBulkSender_lnx`, `GmailBulkSender_lnx`
+- **macOS (ARM64)**: `EmailBulkSender_mac_arm64`, `GmailBulkSender_mac_arm64`
+- **macOS (AMD64)**: `EmailBulkSender_mac_amd64`, `GmailBulkSender_mac_amd64`
 
 Pythonがインストールされていない環境でも実行可能です。詳細は[BUILD_GUIDE.md](BUILD_GUIDE.md)を参照してください。
 
 **どれを使うべきか：**
 - **初めて使う / GUIが好き** → GUI版（`email_bulk_sender_gui.py` または `gmail_bulk_sender_gui.py`）
 - **コマンドラインに慣れている** → CLI版（`email_bulk_sender.py` または `gmail_bulk_sender.py`）
-- **Pythonがない環境で使いたい** → スタンドアロン実行ファイル（dist/EmailBulkSender または dist/GmailBulkSender）
+- **Pythonがない環境で使いたい** → スタンドアロン実行ファイル（dist/内のプラットフォーム別実行ファイル）
 - **Gmailのみ使用** → Gmail専用版
 - **Gmail以外のメールサーバー使用** → 汎用版
 
@@ -75,6 +79,7 @@ Pythonがインストールされていない環境でも実行可能です。�
 - 文字コード自動検出（UTF-8、Shift_JIS、EUC-JPなど）
 - 送信制限対策（送信間隔の自動調整）
 - 送信結果のリアルタイム表示
+- **多言語対応**（日本語・英語の切り替え可能）
 
 ### GUI版の追加機能
 - 視覚的で直感的な操作インターフェース
@@ -147,6 +152,18 @@ email-bulk-sender/
 
 ## ファイルの準備
 
+**サンプルファイルの利用:**
+
+`examples/` ディレクトリにサンプルファイルが用意されています。以下のコマンドでコピーしてすぐに試すことができます：
+
+```bash
+cp examples/list.csv.sample list.csv
+cp examples/body.txt.sample body.txt
+# 必要に応じてファイルを編集してください
+```
+
+詳細は [examples/README.md](examples/README.md) を参照してください。
+
 ### list.csv（受信者リスト）
 
 CSVファイルに受信者の情報を記載します。
@@ -210,6 +227,27 @@ Tel: 03-1234-5678
 - **3行目以降**: 本文（`{企業}`で企業名、`{氏名}`で受信者名を挿入可能）
 
 ## 使い方
+
+### 言語設定
+
+すべてのプログラムは日本語・英語の両方に対応しています。
+
+**CLI版（コマンドライン版）:**
+```bash
+# 日本語で実行（デフォルト、システム言語を自動検出）
+python email_bulk_sender.py
+
+# 英語で実行
+python email_bulk_sender.py --lang en
+
+# 日本語を明示的に指定
+python email_bulk_sender.py --lang ja
+```
+
+**GUI版:**
+- アプリケーション内の「言語設定」タブで言語を選択
+- 選択した言語は設定ファイルに保存され、次回起動時に反映
+- 言語を変更した場合は、アプリケーションを再起動してください
 
 ### 1. スクリプトの実行
 
@@ -536,6 +574,10 @@ python gmail_bulk_sender_gui.py
 
 Pythonがインストールされていない環境でも実行できるスタンドアロン実行ファイル（Windows: .exe、Linux/Mac: バイナリ）を作成できます。
 
+ビルドスクリプトは自動的に以下を作成します：
+- 実行ファイル単体
+- **配布用zipパッケージ**（実行ファイル + サンプルファイル + README + LICENSE）
+
 ### 自動ビルド（推奨）
 
 #### Windows
@@ -543,11 +585,45 @@ Pythonがインストールされていない環境でも実行できるスタ�
 build_executables.bat
 ```
 
+作成されるファイル：
+- `dist/EmailBulkSender_win.exe` - 汎用版実行ファイル
+- `dist/EmailBulkSender_win.zip` - 汎用版配布パッケージ ⭐
+- `dist/GmailBulkSender_win.exe` - Gmail版実行ファイル
+- `dist/GmailBulkSender_win.zip` - Gmail版配布パッケージ ⭐
+
 #### Linux/Mac
 ```bash
 chmod +x build_executables.sh
 ./build_executables.sh
 ```
+
+作成されるファイル（例：Linux）：
+- `dist/EmailBulkSender_lnx` - 汎用版実行ファイル
+- `dist/EmailBulkSender_lnx.zip` - 汎用版配布パッケージ ⭐
+- `dist/GmailBulkSender_lnx` - Gmail版実行ファイル
+- `dist/GmailBulkSender_lnx.zip` - Gmail版配布パッケージ ⭐
+
+### 配布パッケージの内容
+
+zipファイルには以下が含まれます：
+```
+EmailBulkSender_xxx.zip
+├── EmailBulkSender_xxx[.exe]  # 実行ファイル
+├── examples/                   # サンプルファイル
+│   ├── list.csv.sample
+│   ├── body.txt.sample
+│   ├── body_en.txt.sample
+│   └── README.md
+├── README.md                   # 使い方ガイド
+└── LICENSE                     # ライセンス
+```
+
+**配布方法：**
+zipファイルを配布すれば、受け取った人は解凍してすぐに使い始められます：
+1. zipファイルを解凍
+2. `examples/list.csv.sample` を `list.csv` にコピー
+3. `examples/body.txt.sample` を `body.txt` にコピー
+4. ファイルを編集して実行ファイルをダブルクリック
 
 ### 手動ビルド
 
@@ -557,12 +633,34 @@ chmod +x build_executables.sh
    ```
 
 2. 実行ファイルを作成：
+
+   **Windows:**
    ```bash
    # 汎用版GUI
-   pyinstaller --onefile --windowed --name="EmailBulkSender" email_bulk_sender_gui.py
+   pyinstaller --onefile --windowed --name="EmailBulkSender_win" email_bulk_sender_gui.py
 
    # Gmail専用版GUI
-   pyinstaller --onefile --windowed --name="GmailBulkSender" gmail_bulk_sender_gui.py
+   pyinstaller --onefile --windowed --name="GmailBulkSender_win" gmail_bulk_sender_gui.py
+   ```
+
+   **Linux:**
+   ```bash
+   # 汎用版GUI
+   pyinstaller --onefile --windowed --name="EmailBulkSender_lnx" email_bulk_sender_gui.py
+
+   # Gmail専用版GUI
+   pyinstaller --onefile --windowed --name="GmailBulkSender_lnx" gmail_bulk_sender_gui.py
+   ```
+
+   **macOS:**
+   ```bash
+   # ARM64版 (M1/M2/M3 Mac)
+   pyinstaller --onefile --windowed --name="EmailBulkSender_mac_arm64" email_bulk_sender_gui.py
+   pyinstaller --onefile --windowed --name="GmailBulkSender_mac_arm64" gmail_bulk_sender_gui.py
+
+   # AMD64版 (Intel Mac)
+   pyinstaller --onefile --windowed --name="EmailBulkSender_mac_amd64" email_bulk_sender_gui.py
+   pyinstaller --onefile --windowed --name="GmailBulkSender_mac_amd64" gmail_bulk_sender_gui.py
    ```
 
 3. 実行ファイルは `dist/` ディレクトリに作成されます
@@ -571,7 +669,7 @@ chmod +x build_executables.sh
 
 ### 実行ファイルの配布
 
-作成された実行ファイル（`dist/EmailBulkSender` または `dist/GmailBulkSender`）を配布すれば、Pythonがインストールされていない環境でも実行できます。
+作成された実行ファイル（例：`dist/EmailBulkSender_win.exe`、`dist/EmailBulkSender_lnx`など）を配布すれば、Pythonがインストールされていない環境でも実行できます。
 
 **注意事項：**
 - Windows用の.exeファイルを作成するには、Windows環境でビルドする必要があります
@@ -628,15 +726,19 @@ A tool for sending personalized bulk emails based on a CSV recipient list. Provi
 
 ### Standalone Executables (.exe / Binary)
 
-- **EmailBulkSender** - Generic GUI executable
-- **GmailBulkSender** - Gmail-specific GUI executable
+Platform-specific executables can be created:
+
+- **Windows**: `EmailBulkSender_win.exe`, `GmailBulkSender_win.exe`
+- **Linux**: `EmailBulkSender_lnx`, `GmailBulkSender_lnx`
+- **macOS (ARM64)**: `EmailBulkSender_mac_arm64`, `GmailBulkSender_mac_arm64`
+- **macOS (AMD64)**: `EmailBulkSender_mac_amd64`, `GmailBulkSender_mac_amd64`
 
 Can run on systems without Python installed. See [BUILD_GUIDE.md](BUILD_GUIDE.md) for details.
 
 **Which one to use:**
 - **First time / Prefer GUI** → GUI version (`email_bulk_sender_gui.py` or `gmail_bulk_sender_gui.py`)
 - **Comfortable with command line** → CLI version (`email_bulk_sender.py` or `gmail_bulk_sender.py`)
-- **No Python environment** → Standalone executables (dist/EmailBulkSender or dist/GmailBulkSender)
+- **No Python environment** → Standalone executables (platform-specific files in dist/)
 - **Gmail only** → Gmail-specific version
 - **Non-Gmail mail servers** → Generic version
 
@@ -668,6 +770,7 @@ The following documentation primarily covers the CLI version. For GUI version us
 - Automatic character encoding detection (UTF-8, Shift_JIS, EUC-JP, etc.)
 - Rate limiting protection (automatic sending interval adjustment)
 - Real-time sending status display
+- **Multi-language support** (Japanese/English switchable)
 
 ### Additional GUI Features
 - Visual and intuitive interface
@@ -740,6 +843,18 @@ email-bulk-sender/
 
 ## File Preparation
 
+**Using Sample Files:**
+
+Sample files are provided in the `examples/` directory. You can copy and start using them immediately:
+
+```bash
+cp examples/list.csv.sample list.csv
+cp examples/body.txt.sample body.txt
+# Edit the files as needed
+```
+
+See [examples/README.md](examples/README.md) for details.
+
 ### list.csv (Recipient List)
 
 Enter recipient information in the CSV file.
@@ -802,6 +917,27 @@ Tel: 03-1234-5678
 - **Line 3 onwards**: Body (can use `{企業}` for company name and `{氏名}` for recipient name)
 
 ## Usage (CLI Version)
+
+### Language Settings
+
+All programs support both Japanese and English.
+
+**CLI Version (Command Line):**
+```bash
+# Run in Japanese (default, auto-detects system language)
+python email_bulk_sender.py
+
+# Run in English
+python email_bulk_sender.py --lang en
+
+# Explicitly specify Japanese
+python email_bulk_sender.py --lang ja
+```
+
+**GUI Version:**
+- Select language in the "Language" tab within the application
+- Selected language is saved to a configuration file and applied on next startup
+- Please restart the application after changing the language
 
 ### 1. Run the Script
 
@@ -1128,6 +1264,10 @@ python gmail_bulk_sender_gui.py
 
 You can create standalone executables (Windows: .exe, Linux/Mac: binary) that can run on systems without Python installed.
 
+The build script automatically creates:
+- Standalone executables
+- **Distribution zip packages** (executable + sample files + README + LICENSE)
+
 ### Automatic Build (Recommended)
 
 #### Windows
@@ -1135,11 +1275,45 @@ You can create standalone executables (Windows: .exe, Linux/Mac: binary) that ca
 build_executables.bat
 ```
 
+Created files:
+- `dist/EmailBulkSender_win.exe` - Generic version executable
+- `dist/EmailBulkSender_win.zip` - Generic version distribution package ⭐
+- `dist/GmailBulkSender_win.exe` - Gmail version executable
+- `dist/GmailBulkSender_win.zip` - Gmail version distribution package ⭐
+
 #### Linux/Mac
 ```bash
 chmod +x build_executables.sh
 ./build_executables.sh
 ```
+
+Created files (example: Linux):
+- `dist/EmailBulkSender_lnx` - Generic version executable
+- `dist/EmailBulkSender_lnx.zip` - Generic version distribution package ⭐
+- `dist/GmailBulkSender_lnx` - Gmail version executable
+- `dist/GmailBulkSender_lnx.zip` - Gmail version distribution package ⭐
+
+### Distribution Package Contents
+
+The zip file includes:
+```
+EmailBulkSender_xxx.zip
+├── EmailBulkSender_xxx[.exe]  # Executable file
+├── examples/                   # Sample files
+│   ├── list.csv.sample
+│   ├── body.txt.sample
+│   ├── body_en.txt.sample
+│   └── README.md
+├── README.md                   # User guide
+└── LICENSE                     # License
+```
+
+**How to Distribute:**
+Distribute the zip file, and recipients can start using it immediately:
+1. Extract the zip file
+2. Copy `examples/list.csv.sample` to `list.csv`
+3. Copy `examples/body.txt.sample` to `body.txt`
+4. Edit the files and double-click the executable
 
 ### Manual Build
 
@@ -1149,12 +1323,34 @@ chmod +x build_executables.sh
    ```
 
 2. Create executables:
+
+   **Windows:**
    ```bash
    # Generic GUI version
-   pyinstaller --onefile --windowed --name="EmailBulkSender" email_bulk_sender_gui.py
+   pyinstaller --onefile --windowed --name="EmailBulkSender_win" email_bulk_sender_gui.py
 
    # Gmail-specific GUI version
-   pyinstaller --onefile --windowed --name="GmailBulkSender" gmail_bulk_sender_gui.py
+   pyinstaller --onefile --windowed --name="GmailBulkSender_win" gmail_bulk_sender_gui.py
+   ```
+
+   **Linux:**
+   ```bash
+   # Generic GUI version
+   pyinstaller --onefile --windowed --name="EmailBulkSender_lnx" email_bulk_sender_gui.py
+
+   # Gmail-specific GUI version
+   pyinstaller --onefile --windowed --name="GmailBulkSender_lnx" gmail_bulk_sender_gui.py
+   ```
+
+   **macOS:**
+   ```bash
+   # ARM64 (M1/M2/M3 Mac)
+   pyinstaller --onefile --windowed --name="EmailBulkSender_mac_arm64" email_bulk_sender_gui.py
+   pyinstaller --onefile --windowed --name="GmailBulkSender_mac_arm64" gmail_bulk_sender_gui.py
+
+   # AMD64 (Intel Mac)
+   pyinstaller --onefile --windowed --name="EmailBulkSender_mac_amd64" email_bulk_sender_gui.py
+   pyinstaller --onefile --windowed --name="GmailBulkSender_mac_amd64" gmail_bulk_sender_gui.py
    ```
 
 3. Executables will be created in the `dist/` directory
@@ -1163,7 +1359,7 @@ See [BUILD_GUIDE.md](BUILD_GUIDE.md) for details.
 
 ### Distributing Executables
 
-You can distribute the created executables (`dist/EmailBulkSender` or `dist/GmailBulkSender`), which can run on systems without Python installed.
+You can distribute the created executables (e.g., `dist/EmailBulkSender_win.exe`, `dist/EmailBulkSender_lnx`, etc.), which can run on systems without Python installed.
 
 **Important Notes:**
 - To create Windows .exe files, you must build on a Windows environment

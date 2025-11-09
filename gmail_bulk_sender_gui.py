@@ -2,7 +2,10 @@ import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import threading
 import sys
+import json
+import os
 from gmail_bulk_sender import GmailBulkSender
+from i18n import get_i18n
 
 # CustomTkinterの外観設定
 ctk.set_appearance_mode("System")  # "System", "Dark", "Light"
@@ -13,8 +16,13 @@ class GmailBulkSenderGUI(ctk.CTk):
     def __init__(self):
         super().__init__()
 
+        # i18n初期化
+        self.config_file = os.path.join(os.path.expanduser("~"), ".gmail_bulk_sender_config.json")
+        saved_lang = self.load_language_config()
+        self.i18n = get_i18n(saved_lang)
+
         # ウィンドウ設定
-        self.title("Gmail一括送信ツール")
+        self.title(self.i18n.get('app_title_gmail'))
         self.geometry("900x700")
 
         # 変数の初期化
@@ -36,34 +44,56 @@ class GmailBulkSenderGUI(ctk.CTk):
         self.tabview.pack(pady=20, padx=20, fill="both", expand=True)
 
         # タブの追加
-        self.tabview.add("基本設定")
-        self.tabview.add("ファイル選択")
-        self.tabview.add("オプション")
-        self.tabview.add("送信実行")
+        self.tabview.add(self.i18n.get('tab_basic'))
+        self.tabview.add(self.i18n.get('tab_files'))
+        self.tabview.add(self.i18n.get('tab_options'))
+        self.tabview.add(self.i18n.get('tab_send'))
+        self.tabview.add(self.i18n.get('tab_language'))
 
         # 各タブの作成
         self.create_basic_settings_tab()
         self.create_file_selection_tab()
         self.create_options_tab()
         self.create_send_tab()
+        self.create_language_tab()
+
+    def load_language_config(self):
+        """設定ファイルから言語設定を読み込む"""
+        try:
+            if os.path.exists(self.config_file):
+                with open(self.config_file, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                    return config.get('language')
+        except:
+            pass
+        return None
+
+    def save_language_config(self, lang):
+        """言語設定を設定ファイルに保存"""
+        try:
+            config = {'language': lang}
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(config, f, ensure_ascii=False, indent=2)
+        except:
+            pass
 
     def create_basic_settings_tab(self):
         """基本設定タブの作成"""
-        tab = self.tabview.tab("基本設定")
+        tab = self.tabview.tab(self.i18n.get('tab_basic'))
 
         # スクロール可能なフレーム
         scroll_frame = ctk.CTkScrollableFrame(tab, width=800, height=500)
         scroll_frame.pack(pady=10, padx=10, fill="both", expand=True)
 
         # Gmail設定
-        ctk.CTkLabel(scroll_frame, text="Gmail設定", font=("", 16, "bold")).pack(pady=(10, 5), anchor="w")
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('smtp_settings'), font=("", 16, "bold")).pack(pady=(10, 5), anchor="w")
 
         # Gmailアドレス
-        ctk.CTkLabel(scroll_frame, text="Gmailアドレス:").pack(pady=(10, 0), anchor="w")
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('gmail_address')).pack(pady=(10, 0), anchor="w")
         ctk.CTkEntry(scroll_frame, textvariable=self.gmail_address, width=400).pack(pady=5, anchor="w")
 
         # アプリパスワード
-        ctk.CTkLabel(scroll_frame, text="Gmailアプリパスワード:").pack(pady=(10, 0), anchor="w")
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('gmail_app_password')).pack(pady=(10, 0), anchor="w")
         ctk.CTkEntry(scroll_frame, textvariable=self.gmail_password, width=400, show="*").pack(pady=5, anchor="w")
 
         # アプリパスワードの説明
@@ -78,51 +108,51 @@ class GmailBulkSenderGUI(ctk.CTk):
         ctk.CTkLabel(scroll_frame, text=info_text, text_color="gray", justify="left").pack(pady=(0, 10), anchor="w")
 
         # 送信元表示名
-        ctk.CTkLabel(scroll_frame, text="送信元表示名 (オプション):").pack(pady=(10, 0), anchor="w")
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('sender_display_name')).pack(pady=(10, 0), anchor="w")
         ctk.CTkEntry(scroll_frame, textvariable=self.sender_display_name, width=400).pack(pady=5, anchor="w")
-        ctk.CTkLabel(scroll_frame, text="例: 株式会社サンプル 営業部",
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('sender_display_name_example'),
                     text_color="gray").pack(pady=(0, 10), anchor="w")
 
     def create_file_selection_tab(self):
         """ファイル選択タブの作成"""
-        tab = self.tabview.tab("ファイル選択")
+        tab = self.tabview.tab(self.i18n.get('tab_files'))
 
         # スクロール可能なフレーム
         scroll_frame = ctk.CTkScrollableFrame(tab, width=800, height=500)
         scroll_frame.pack(pady=10, padx=10, fill="both", expand=True)
 
         # CSVファイル
-        ctk.CTkLabel(scroll_frame, text="受信者リストCSVファイル", font=("", 16, "bold")).pack(pady=(10, 5), anchor="w")
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('recipient_list'), font=("", 16, "bold")).pack(pady=(10, 5), anchor="w")
 
         csv_frame = ctk.CTkFrame(scroll_frame)
         csv_frame.pack(pady=10, fill="x")
 
         ctk.CTkEntry(csv_frame, textvariable=self.csv_file, width=500).pack(side="left", padx=5)
-        ctk.CTkButton(csv_frame, text="ファイル選択", command=self.select_csv_file, width=100).pack(side="left", padx=5)
+        ctk.CTkButton(csv_frame, text=self.i18n.get('select_file'), command=self.select_csv_file, width=100).pack(side="left", padx=5)
 
-        ctk.CTkLabel(scroll_frame, text="CSVフォーマット: 企業,氏名,メールアドレス (または company,name,email)",
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('csv_description'),
                     text_color="gray").pack(pady=(0, 10), anchor="w")
 
         # テンプレートファイル
-        ctk.CTkLabel(scroll_frame, text="メールテンプレートファイル", font=("", 16, "bold")).pack(pady=(20, 5), anchor="w")
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('email_template'), font=("", 16, "bold")).pack(pady=(20, 5), anchor="w")
 
         template_frame = ctk.CTkFrame(scroll_frame)
         template_frame.pack(pady=10, fill="x")
 
         ctk.CTkEntry(template_frame, textvariable=self.template_file, width=500).pack(side="left", padx=5)
-        ctk.CTkButton(template_frame, text="ファイル選択", command=self.select_template_file, width=100).pack(side="left", padx=5)
+        ctk.CTkButton(template_frame, text=self.i18n.get('select_file'), command=self.select_template_file, width=100).pack(side="left", padx=5)
 
-        ctk.CTkLabel(scroll_frame, text="1行目: 件名、2行目: 空行、3行目以降: 本文\n{企業} {氏名} で置換可能",
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('template_description'),
                     text_color="gray").pack(pady=(0, 10), anchor="w")
 
         # 添付ファイル
-        ctk.CTkLabel(scroll_frame, text="添付ファイル (オプション)", font=("", 16, "bold")).pack(pady=(20, 5), anchor="w")
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('attachments'), font=("", 16, "bold")).pack(pady=(20, 5), anchor="w")
 
         attachment_btn_frame = ctk.CTkFrame(scroll_frame)
         attachment_btn_frame.pack(pady=10, fill="x")
 
-        ctk.CTkButton(attachment_btn_frame, text="ファイル追加", command=self.add_attachment_files, width=100).pack(side="left", padx=5)
-        ctk.CTkButton(attachment_btn_frame, text="クリア", command=self.clear_attachment_files, width=100).pack(side="left", padx=5)
+        ctk.CTkButton(attachment_btn_frame, text=self.i18n.get('add_file'), command=self.add_attachment_files, width=100).pack(side="left", padx=5)
+        ctk.CTkButton(attachment_btn_frame, text=self.i18n.get('remove_file'), command=self.clear_attachment_files, width=100).pack(side="left", padx=5)
 
         # 添付ファイルリスト表示
         self.attachment_listbox = ctk.CTkTextbox(scroll_frame, width=700, height=100)
@@ -131,48 +161,46 @@ class GmailBulkSenderGUI(ctk.CTk):
 
     def create_options_tab(self):
         """オプション設定タブの作成"""
-        tab = self.tabview.tab("オプション")
+        tab = self.tabview.tab(self.i18n.get('tab_options'))
 
         # スクロール可能なフレーム
         scroll_frame = ctk.CTkScrollableFrame(tab, width=800, height=500)
         scroll_frame.pack(pady=10, padx=10, fill="both", expand=True)
 
         # CC
-        ctk.CTkLabel(scroll_frame, text="CC (カーボンコピー):").pack(pady=(10, 0), anchor="w")
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('cc')).pack(pady=(10, 0), anchor="w")
         ctk.CTkEntry(scroll_frame, textvariable=self.cc, width=400).pack(pady=5, anchor="w")
-        ctk.CTkLabel(scroll_frame, text="複数の場合はカンマ区切り", text_color="gray").pack(pady=(0, 10), anchor="w")
 
         # BCC
-        ctk.CTkLabel(scroll_frame, text="BCC (ブラインドカーボンコピー):").pack(pady=(10, 0), anchor="w")
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('bcc')).pack(pady=(10, 0), anchor="w")
         ctk.CTkEntry(scroll_frame, textvariable=self.bcc, width=400).pack(pady=5, anchor="w")
-        ctk.CTkLabel(scroll_frame, text="複数の場合はカンマ区切り", text_color="gray").pack(pady=(0, 10), anchor="w")
 
         # Reply-To
-        ctk.CTkLabel(scroll_frame, text="Reply-To (返信先):").pack(pady=(10, 0), anchor="w")
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('reply_to')).pack(pady=(10, 0), anchor="w")
         ctk.CTkEntry(scroll_frame, textvariable=self.reply_to, width=400).pack(pady=5, anchor="w")
 
         # 送信間隔
-        ctk.CTkLabel(scroll_frame, text="送信間隔 (秒):").pack(pady=(20, 0), anchor="w")
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('send_delay')).pack(pady=(20, 0), anchor="w")
         ctk.CTkEntry(scroll_frame, textvariable=self.send_delay, width=400).pack(pady=5, anchor="w")
-        ctk.CTkLabel(scroll_frame, text="推奨: 少量(~50通)=3-5秒, 中量(50-100通)=5-10秒, 大量(100通以上)=10秒以上",
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('send_delay_hint'),
                     text_color="gray").pack(pady=(0, 10), anchor="w")
 
     def create_send_tab(self):
         """送信実行タブの作成"""
-        tab = self.tabview.tab("送信実行")
+        tab = self.tabview.tab(self.i18n.get('tab_send'))
 
         # プレビューボタン
         preview_frame = ctk.CTkFrame(tab)
         preview_frame.pack(pady=10, padx=10, fill="x")
 
-        ctk.CTkButton(preview_frame, text="送信内容をプレビュー", command=self.preview_content,
+        ctk.CTkButton(preview_frame, text=self.i18n.get('preview_button'), command=self.preview_content,
                      width=200, height=40, font=("", 14, "bold")).pack(pady=10)
 
         # 送信ボタン
         send_frame = ctk.CTkFrame(tab)
         send_frame.pack(pady=10, padx=10, fill="x")
 
-        self.send_button = ctk.CTkButton(send_frame, text="メール送信開始", command=self.start_sending,
+        self.send_button = ctk.CTkButton(send_frame, text=self.i18n.get('send_button'), command=self.start_sending,
                                          width=200, height=40, font=("", 14, "bold"), fg_color="green")
         self.send_button.pack(pady=10)
 
@@ -182,15 +210,49 @@ class GmailBulkSenderGUI(ctk.CTk):
         self.progress_bar.set(0)
 
         # ログ表示
-        ctk.CTkLabel(tab, text="送信ログ:", font=("", 14, "bold")).pack(pady=(10, 5), anchor="w", padx=10)
+        ctk.CTkLabel(tab, text=self.i18n.get('log') + ":", font=("", 14, "bold")).pack(pady=(10, 5), anchor="w", padx=10)
 
         self.log_textbox = ctk.CTkTextbox(tab, width=850, height=300)
         self.log_textbox.pack(pady=10, padx=10, fill="both", expand=True)
 
+    def create_language_tab(self):
+        """言語設定タブの作成"""
+        tab = self.tabview.tab(self.i18n.get('tab_language'))
+
+        # スクロール可能なフレーム
+        scroll_frame = ctk.CTkScrollableFrame(tab, width=800, height=500)
+        scroll_frame.pack(pady=10, padx=10, fill="both", expand=True)
+
+        # 言語設定
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('language_setting'), font=("", 16, "bold")).pack(pady=(10, 5), anchor="w")
+
+        # 言語選択
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('language')).pack(pady=(10, 0), anchor="w")
+
+        self.language_var = ctk.StringVar(value=self.i18n.get_language())
+        language_options = ["ja", "en"]
+        language_menu = ctk.CTkOptionMenu(scroll_frame, variable=self.language_var,
+                                          values=language_options,
+                                          command=self.on_language_changed,
+                                          width=200)
+        language_menu.pack(pady=5, anchor="w")
+
+        # 注意メッセージ
+        ctk.CTkLabel(scroll_frame, text=self.i18n.get('language_note'),
+                    text_color="gray", wraplength=700).pack(pady=(20, 10), anchor="w")
+
+    def on_language_changed(self, choice):
+        """言語変更時のハンドラ"""
+        self.save_language_config(choice)
+        messagebox.showinfo(
+            self.i18n.get('info'),
+            self.i18n.get('language_note')
+        )
+
     def select_csv_file(self):
         """CSVファイル選択"""
         filename = filedialog.askopenfilename(
-            title="受信者リストCSVファイルを選択",
+            title=self.i18n.get('select_csv'),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
         if filename:
@@ -199,7 +261,7 @@ class GmailBulkSenderGUI(ctk.CTk):
     def select_template_file(self):
         """テンプレートファイル選択"""
         filename = filedialog.askopenfilename(
-            title="メールテンプレートファイルを選択",
+            title=self.i18n.get('select_template'),
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
         )
         if filename:
@@ -208,7 +270,7 @@ class GmailBulkSenderGUI(ctk.CTk):
     def add_attachment_files(self):
         """添付ファイル追加"""
         filenames = filedialog.askopenfilenames(
-            title="添付ファイルを選択",
+            title=self.i18n.get('select_attachment'),
             filetypes=[("All files", "*.*")]
         )
         if filenames:
@@ -228,7 +290,7 @@ class GmailBulkSenderGUI(ctk.CTk):
             for i, file in enumerate(self.attachment_files, 1):
                 self.attachment_listbox.insert("end", f"{i}. {file}\n")
         else:
-            self.attachment_listbox.insert("end", "添付ファイルなし")
+            self.attachment_listbox.insert("end", self.i18n.get('no_attachments'))
         self.attachment_listbox.configure(state="disabled")
 
     def log(self, message):
@@ -240,22 +302,22 @@ class GmailBulkSenderGUI(ctk.CTk):
     def validate_inputs(self):
         """入力検証"""
         if not self.gmail_address.get():
-            messagebox.showerror("エラー", "Gmailアドレスを入力してください")
+            messagebox.showerror(self.i18n.get('error'), self.i18n.get('error_missing_email'))
             return False
         if not self.gmail_password.get():
-            messagebox.showerror("エラー", "Gmailアプリパスワードを入力してください")
+            messagebox.showerror(self.i18n.get('error'), self.i18n.get('error_missing_password'))
             return False
         if not self.csv_file.get():
-            messagebox.showerror("エラー", "受信者リストCSVファイルを選択してください")
+            messagebox.showerror(self.i18n.get('error'), self.i18n.get('error_missing_csv'))
             return False
         if not self.template_file.get():
-            messagebox.showerror("エラー", "メールテンプレートファイルを選択してください")
+            messagebox.showerror(self.i18n.get('error'), self.i18n.get('error_missing_template'))
             return False
 
         try:
             float(self.send_delay.get())
         except ValueError:
-            messagebox.showerror("エラー", "送信間隔は数値で入力してください")
+            messagebox.showerror(self.i18n.get('error'), self.i18n.get('error_invalid_delay'))
             return False
 
         return True
@@ -305,7 +367,7 @@ Reply-To: {self.reply_to.get() if self.reply_to.get() else 'なし'}
 
             # プレビューウィンドウを表示
             preview_window = ctk.CTkToplevel(self)
-            preview_window.title("送信内容プレビュー")
+            preview_window.title(self.i18n.get('preview_title'))
             preview_window.geometry("800x600")
 
             preview_textbox = ctk.CTkTextbox(preview_window, width=780, height=550)
@@ -314,7 +376,7 @@ Reply-To: {self.reply_to.get() if self.reply_to.get() else 'なし'}
             preview_textbox.configure(state="disabled")
 
         except Exception as e:
-            messagebox.showerror("エラー", f"プレビュー作成中にエラーが発生しました:\n{str(e)}")
+            messagebox.showerror(self.i18n.get('error'), f"{self.i18n.get('error_send_failed')}:\n{str(e)}")
 
     def start_sending(self):
         """送信開始"""
@@ -323,8 +385,8 @@ Reply-To: {self.reply_to.get() if self.reply_to.get() else 'なし'}
 
         # 確認ダイアログ
         result = messagebox.askyesno(
-            "確認",
-            "メール送信を開始しますか？\n送信開始後はキャンセルできません。"
+            self.i18n.get('confirm'),
+            self.i18n.get('confirm_send')
         )
         if not result:
             return
@@ -343,7 +405,7 @@ Reply-To: {self.reply_to.get() if self.reply_to.get() else 'なし'}
     def send_emails(self):
         """メール送信処理（別スレッドで実行）"""
         try:
-            self.log("=== メール送信開始 ===")
+            self.log(f"=== {self.i18n.get('sending')} ===")
 
             sender = GmailBulkSender(
                 self.gmail_address.get(),
@@ -355,8 +417,8 @@ Reply-To: {self.reply_to.get() if self.reply_to.get() else 'なし'}
             recipients = sender.read_recipients(self.csv_file.get())
             subject_template, body_template = sender.read_email_template(self.template_file.get())
 
-            self.log(f"送信先: {len(recipients)}件")
-            self.log(f"件名: {subject_template}")
+            self.log(self.i18n.get('preview_recipients', len(recipients)))
+            self.log(self.i18n.get('preview_subject', subject_template))
 
             # オプション設定
             cc = self.cc.get() if self.cc.get() else None
@@ -395,7 +457,7 @@ Reply-To: {self.reply_to.get() if self.reply_to.get() else 'なし'}
 
                         server.send_message(msg)
                         success_count += 1
-                        self.log(f"[{i}/{len(recipients)}] 送信成功: {recipient['company']} {recipient['name']} ({recipient['email']})")
+                        self.log(self.i18n.get('send_success', i, len(recipients), recipient['company'], recipient['name'], recipient['email']))
 
                         # プログレスバー更新
                         progress = i / len(recipients)
@@ -407,21 +469,20 @@ Reply-To: {self.reply_to.get() if self.reply_to.get() else 'なし'}
 
                     except Exception as e:
                         fail_count += 1
-                        self.log(f"[{i}/{len(recipients)}] 送信失敗: {recipient['company']} {recipient['name']} ({recipient['email']}) - エラー: {e}")
+                        self.log(self.i18n.get('send_failed', i, len(recipients), recipient['company'], recipient['name'], recipient['email'], str(e)))
 
                 server.quit()
-                self.log(f"\n=== 送信完了 ===")
-                self.log(f"成功: {success_count}件, 失敗: {fail_count}件")
+                self.log(f"\n=== {self.i18n.get('send_complete', success_count, fail_count)} ===")
 
-                messagebox.showinfo("完了", f"送信完了\n成功: {success_count}件, 失敗: {fail_count}件")
+                messagebox.showinfo(self.i18n.get('success'), self.i18n.get('send_complete', success_count, fail_count))
 
             except Exception as e:
-                self.log(f"Gmail SMTP接続エラー: {e}")
-                messagebox.showerror("エラー", f"Gmail SMTP接続エラー:\n{str(e)}\n\nGmailアプリパスワードを確認してください。")
+                self.log(f"Gmail SMTP {self.i18n.get('error')}: {e}")
+                messagebox.showerror(self.i18n.get('error'), f"Gmail SMTP {self.i18n.get('error')}:\n{str(e)}\n\nGmailアプリパスワードを確認してください。")
 
         except Exception as e:
-            self.log(f"エラー: {e}")
-            messagebox.showerror("エラー", f"送信中にエラーが発生しました:\n{str(e)}")
+            self.log(f"{self.i18n.get('error')}: {e}")
+            messagebox.showerror(self.i18n.get('error'), f"{self.i18n.get('error_send_failed')}:\n{str(e)}")
 
         finally:
             # ボタンを有効化
