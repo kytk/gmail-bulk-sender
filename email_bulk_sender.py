@@ -14,6 +14,7 @@ import mimetypes
 import chardet
 import argparse
 from i18n import get_i18n
+from config import ConfigManager
 
 # ==================== 設定セクション ====================
 # ここで送信元情報とSMTPサーバー設定をしてください
@@ -377,17 +378,37 @@ def main():
     # コマンドライン引数をパース
     parser = argparse.ArgumentParser(description='Email Bulk Sender / メール一括送信ツール')
     parser.add_argument('--lang', choices=['ja', 'en'], help='Language / 言語 (ja/en)')
+    parser.add_argument('--load-config', action='store_true', help='Load settings from config file / 設定ファイルから読み込む')
+    parser.add_argument('--save-config', action='store_true', help='Save settings to config file / 設定ファイルに保存する')
     args = parser.parse_args()
 
     # i18nインスタンスを作成
     i18n = get_i18n(args.lang)
 
+    # 設定ファイル管理を初期化
+    config_manager = ConfigManager("email")
+
+    # 設定を読み込む（--load-configフラグまたは既存の設定ファイルがある場合）
+    config = None
+    if args.load_config or config_manager.config_exists():
+        config = config_manager.load_config()
+        if config:
+            if i18n.get_language() == 'ja':
+                print(f"設定ファイルを読み込みました: {config_manager.get_config_path()}\n")
+            else:
+                print(f"Loaded config from: {config_manager.get_config_path()}\n")
+
+    # 設定がない場合はデフォルトを使用
+    if not config:
+        config = config_manager.get_default_config()
+
     # メール設定
     print(i18n.get('cli_title') + "\n")
 
-    # SMTPサーバーの取得（デフォルト値がある場合はそれを使用）
-    if DEFAULT_SMTP_SERVER:
-        smtp_server = DEFAULT_SMTP_SERVER
+    # SMTPサーバーの取得（設定ファイルまたはデフォルト値から）
+    smtp_server_from_config = config.get('smtp', {}).get('server', DEFAULT_SMTP_SERVER)
+    if smtp_server_from_config:
+        smtp_server = smtp_server_from_config
         if i18n.get_language() == 'ja':
             print(f"SMTPサーバー: {smtp_server} (設定済み)")
         else:
@@ -395,19 +416,20 @@ def main():
     else:
         smtp_server = input(i18n.get('cli_smtp_server') + ": ")
 
-    # SMTPポートの取得（デフォルト値がある場合はそれを使用）
-    if DEFAULT_SMTP_PORT:
+    # SMTPポートの取得（設定ファイルまたはデフォルト値から）
+    smtp_port_from_config = config.get('smtp', {}).get('port', DEFAULT_SMTP_PORT if DEFAULT_SMTP_PORT else 587)
+    if smtp_port_from_config:
         try:
-            smtp_port = int(DEFAULT_SMTP_PORT)
+            smtp_port = int(smtp_port_from_config)
             if i18n.get_language() == 'ja':
                 print(f"SMTPポート: {smtp_port} (設定済み)")
             else:
                 print(f"SMTP Port: {smtp_port} (configured)")
         except ValueError:
             if i18n.get_language() == 'ja':
-                print(f"警告: DEFAULT_SMTP_PORT '{DEFAULT_SMTP_PORT}' が無効です。デフォルト587を使用します。")
+                print(f"警告: 設定されたポート '{smtp_port_from_config}' が無効です。デフォルト587を使用します。")
             else:
-                print(f"Warning: DEFAULT_SMTP_PORT '{DEFAULT_SMTP_PORT}' is invalid. Using default 587.")
+                print(f"Warning: Configured port '{smtp_port_from_config}' is invalid. Using default 587.")
             smtp_port = 587
     else:
         smtp_port_input = input(i18n.get('cli_smtp_port') + ": ").strip()
@@ -423,9 +445,10 @@ def main():
         else:
             smtp_port = 587
 
-    # メールアドレスの取得（デフォルト値がある場合はそれを使用）
-    if DEFAULT_EMAIL_ADDRESS:
-        email_address = DEFAULT_EMAIL_ADDRESS
+    # メールアドレスの取得（設定ファイルまたはデフォルト値から）
+    email_from_config = config.get('sender', {}).get('email_address', DEFAULT_EMAIL_ADDRESS)
+    if email_from_config:
+        email_address = email_from_config
         if i18n.get_language() == 'ja':
             print(f"送信元メールアドレス: {email_address} (設定済み)")
         else:
@@ -433,7 +456,8 @@ def main():
     else:
         email_address = input(i18n.get('cli_email_address') + ": ")
 
-    # パスワードの取得（デフォルト値がある場合はそれを使用）
+    # パスワードの取得（セキュリティのため設定ファイルには保存しない）
+    # DEFAULT_EMAIL_PASSWORDがある場合のみ使用（後方互換性のため）
     if DEFAULT_EMAIL_PASSWORD:
         email_password = DEFAULT_EMAIL_PASSWORD
         if i18n.get_language() == 'ja':
@@ -443,9 +467,10 @@ def main():
     else:
         email_password = getpass(i18n.get('cli_email_password') + ": ")
 
-    # 送信元表示名の取得
-    if SENDER_DISPLAY_NAME:
-        sender_display_name = SENDER_DISPLAY_NAME
+    # 送信元表示名の取得（設定ファイルまたはデフォルト値から）
+    display_name_from_config = config.get('sender', {}).get('display_name', SENDER_DISPLAY_NAME)
+    if display_name_from_config:
+        sender_display_name = display_name_from_config
         if i18n.get_language() == 'ja':
             print(f"送信元表示名: {sender_display_name} (設定済み)")
         else:
@@ -454,8 +479,9 @@ def main():
         sender_display_name = input(i18n.get('cli_sender_name') + ": ").strip()
     
     # ファイルと設定
-    if DEFAULT_CSV_FILE:
-        csv_file = DEFAULT_CSV_FILE
+    csv_from_config = config.get('files', {}).get('csv_file', DEFAULT_CSV_FILE)
+    if csv_from_config:
+        csv_file = csv_from_config
         if i18n.get_language() == 'ja':
             print(f"受信者リストCSVファイル: {csv_file} (設定済み)")
         else:
@@ -463,8 +489,9 @@ def main():
     else:
         csv_file = input(i18n.get('cli_csv_file') + ": ") or "list.csv"
 
-    if DEFAULT_TEMPLATE_FILE:
-        template_file = DEFAULT_TEMPLATE_FILE
+    template_from_config = config.get('files', {}).get('template_file', DEFAULT_TEMPLATE_FILE)
+    if template_from_config:
+        template_file = template_from_config
         if i18n.get_language() == 'ja':
             print(f"メールテンプレートファイル: {template_file} (設定済み)")
         else:
@@ -473,8 +500,9 @@ def main():
         template_file = input(i18n.get('cli_template_file') + ": ") or "body.txt"
     
     # オプション設定
-    if DEFAULT_CC is not None:
-        cc = DEFAULT_CC if DEFAULT_CC else None
+    cc_from_config = config.get('email_options', {}).get('cc', DEFAULT_CC if DEFAULT_CC is not None else "")
+    if DEFAULT_CC is not None or cc_from_config:
+        cc = cc_from_config if cc_from_config else None
         if i18n.get_language() == 'ja':
             print(f"CC: {cc if cc else 'なし'} (設定済み)")
         else:
@@ -482,8 +510,9 @@ def main():
     else:
         cc = input(i18n.get('cli_cc') + ": ").strip() or None
 
-    if DEFAULT_BCC is not None:
-        bcc = DEFAULT_BCC if DEFAULT_BCC else None
+    bcc_from_config = config.get('email_options', {}).get('bcc', DEFAULT_BCC if DEFAULT_BCC is not None else "")
+    if DEFAULT_BCC is not None or bcc_from_config:
+        bcc = bcc_from_config if bcc_from_config else None
         if i18n.get_language() == 'ja':
             print(f"BCC: {bcc if bcc else 'なし'} (設定済み)")
         else:
@@ -491,8 +520,9 @@ def main():
     else:
         bcc = input(i18n.get('cli_bcc') + ": ").strip() or None
 
-    if DEFAULT_REPLY_TO is not None:
-        reply_to = DEFAULT_REPLY_TO if DEFAULT_REPLY_TO else None
+    reply_to_from_config = config.get('email_options', {}).get('reply_to', DEFAULT_REPLY_TO if DEFAULT_REPLY_TO is not None else "")
+    if DEFAULT_REPLY_TO is not None or reply_to_from_config:
+        reply_to = reply_to_from_config if reply_to_from_config else None
         if i18n.get_language() == 'ja':
             print(f"Reply-To: {reply_to if reply_to else 'なし'} (設定済み)")
         else:
@@ -501,8 +531,16 @@ def main():
         reply_to = input(i18n.get('cli_reply_to') + ": ").strip() or None
 
     # 添付ファイル設定
-    if DEFAULT_ATTACHMENTS:
+    attachments_from_config = config.get('files', {}).get('attachments', [])
+    # リストを文字列に変換（設定ファイルではリストとして保存）
+    if isinstance(attachments_from_config, list) and attachments_from_config:
+        attachments_input = ','.join(attachments_from_config)
+    elif isinstance(attachments_from_config, str):
+        attachments_input = attachments_from_config
+    else:
         attachments_input = DEFAULT_ATTACHMENTS
+
+    if attachments_input:
         if i18n.get_language() == 'ja':
             print(f"添付ファイル: {attachments_input} (設定済み)")
         else:
@@ -531,8 +569,9 @@ def main():
                     return
 
     # 送信遅延時間の取得
-    if DEFAULT_SEND_DELAY:
-        send_delay = DEFAULT_SEND_DELAY
+    delay_from_config = config.get('email_options', {}).get('send_delay', DEFAULT_SEND_DELAY if DEFAULT_SEND_DELAY else 5)
+    if delay_from_config or DEFAULT_SEND_DELAY:
+        send_delay = delay_from_config if delay_from_config else DEFAULT_SEND_DELAY
         if i18n.get_language() == 'ja':
             print(f"送信間隔: {send_delay}秒 (設定済み)")
         else:
@@ -553,6 +592,46 @@ def main():
                 send_delay = 5
         else:
             send_delay = 5
+
+    # 設定を保存（--save-configフラグが指定されている場合）
+    if args.save_config:
+        # 設定ファイルに保存する内容を構築（パスワードは含めない）
+        config_to_save = {
+            "version": config_manager.CONFIG_VERSION,
+            "smtp": {
+                "server": smtp_server,
+                "port": smtp_port
+            },
+            "sender": {
+                "email_address": email_address,
+                "display_name": sender_display_name
+            },
+            "files": {
+                "csv_file": csv_file,
+                "template_file": template_file,
+                "attachments": attachments if attachments else []
+            },
+            "email_options": {
+                "cc": cc if cc else "",
+                "bcc": bcc if bcc else "",
+                "reply_to": reply_to if reply_to else "",
+                "send_delay": send_delay
+            },
+            "ui": {
+                "language": i18n.get_language()
+            }
+        }
+
+        if config_manager.save_config(config_to_save):
+            if i18n.get_language() == 'ja':
+                print(f"\n設定をファイルに保存しました: {config_manager.get_config_path()}")
+            else:
+                print(f"\nSaved configuration to: {config_manager.get_config_path()}")
+        else:
+            if i18n.get_language() == 'ja':
+                print("\n警告: 設定ファイルの保存に失敗しました。")
+            else:
+                print("\nWarning: Failed to save configuration file.")
 
     # 送信実行
     sender = EmailBulkSender(email_address, email_password, smtp_server, smtp_port, sender_display_name)

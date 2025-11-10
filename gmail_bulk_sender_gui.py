@@ -6,6 +6,7 @@ import json
 import os
 from gmail_bulk_sender import GmailBulkSender
 from i18n import get_i18n
+from config import ConfigManager
 
 # CustomTkinterの外観設定
 ctk.set_appearance_mode("System")  # "System", "Dark", "Light"
@@ -16,7 +17,10 @@ class GmailBulkSenderGUI(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # i18n初期化
+        # 設定マネージャーの初期化
+        self.config_manager = ConfigManager("gmail")
+
+        # i18n初期化（設定ファイルから言語を読み込む）
         self.config_file = os.path.join(os.path.expanduser("~"), ".gmail_bulk_sender_config.json")
         saved_lang = self.load_language_config()
         self.i18n = get_i18n(saved_lang)
@@ -77,6 +81,84 @@ class GmailBulkSenderGUI(ctk.CTk):
         except:
             pass
 
+    def load_config_settings(self):
+        """設定ファイルから全ての設定を読み込む"""
+        config = self.config_manager.load_config()
+        if not config:
+            if self.i18n.get_language() == 'ja':
+                messagebox.showinfo("情報", "設定ファイルが見つかりません。")
+            else:
+                messagebox.showinfo("Info", "No configuration file found.")
+            return
+
+        # 送信者情報
+        sender_config = config.get('sender', {})
+        if sender_config.get('email_address'):
+            self.gmail_address.set(sender_config['email_address'])
+        if sender_config.get('display_name'):
+            self.sender_display_name.set(sender_config['display_name'])
+
+        # ファイル設定
+        files_config = config.get('files', {})
+        if files_config.get('csv_file'):
+            self.csv_file.set(files_config['csv_file'])
+        if files_config.get('template_file'):
+            self.template_file.set(files_config['template_file'])
+        if files_config.get('attachments'):
+            self.attachment_files = files_config['attachments']
+            self.update_attachment_listbox()
+
+        # メールオプション
+        email_options = config.get('email_options', {})
+        if email_options.get('cc') is not None:
+            self.cc.set(email_options['cc'])
+        if email_options.get('bcc') is not None:
+            self.bcc.set(email_options['bcc'])
+        if email_options.get('reply_to') is not None:
+            self.reply_to.set(email_options['reply_to'])
+        if email_options.get('send_delay') is not None:
+            self.send_delay.set(str(email_options['send_delay']))
+
+        if self.i18n.get_language() == 'ja':
+            messagebox.showinfo("成功", f"設定を読み込みました\n{self.config_manager.get_config_path()}")
+        else:
+            messagebox.showinfo("Success", f"Configuration loaded from\n{self.config_manager.get_config_path()}")
+
+    def save_config_settings(self):
+        """現在の設定を設定ファイルに保存（パスワードは除く）"""
+        config_to_save = {
+            "version": self.config_manager.CONFIG_VERSION,
+            "sender": {
+                "email_address": self.gmail_address.get(),
+                "display_name": self.sender_display_name.get()
+            },
+            "files": {
+                "csv_file": self.csv_file.get(),
+                "template_file": self.template_file.get(),
+                "attachments": self.attachment_files
+            },
+            "email_options": {
+                "cc": self.cc.get(),
+                "bcc": self.bcc.get(),
+                "reply_to": self.reply_to.get(),
+                "send_delay": float(self.send_delay.get()) if self.send_delay.get() else 5
+            },
+            "ui": {
+                "language": self.i18n.get_language()
+            }
+        }
+
+        if self.config_manager.save_config(config_to_save):
+            if self.i18n.get_language() == 'ja':
+                messagebox.showinfo("成功", f"設定を保存しました\n{self.config_manager.get_config_path()}")
+            else:
+                messagebox.showinfo("Success", f"Configuration saved to\n{self.config_manager.get_config_path()}")
+        else:
+            if self.i18n.get_language() == 'ja':
+                messagebox.showerror("エラー", "設定ファイルの保存に失敗しました。")
+            else:
+                messagebox.showerror("Error", "Failed to save configuration file.")
+
     def create_basic_settings_tab(self):
         """基本設定タブの作成"""
         tab = self.tabview.tab(self.i18n.get('tab_basic'))
@@ -112,6 +194,27 @@ class GmailBulkSenderGUI(ctk.CTk):
         ctk.CTkEntry(scroll_frame, textvariable=self.sender_display_name, width=400).pack(pady=5, anchor="w")
         ctk.CTkLabel(scroll_frame, text=self.i18n.get('sender_display_name_example'),
                     text_color="gray").pack(pady=(0, 10), anchor="w")
+
+        # 設定の保存・読み込みボタン
+        ctk.CTkLabel(scroll_frame, text="設定管理" if self.i18n.get_language() == 'ja' else "Configuration Management",
+                    font=("", 16, "bold")).pack(pady=(20, 5), anchor="w")
+
+        config_button_frame = ctk.CTkFrame(scroll_frame)
+        config_button_frame.pack(pady=10, fill="x")
+
+        ctk.CTkButton(config_button_frame,
+                     text="設定を読み込み" if self.i18n.get_language() == 'ja' else "Load Settings",
+                     command=self.load_config_settings,
+                     width=200).pack(side="left", padx=5)
+
+        ctk.CTkButton(config_button_frame,
+                     text="設定を保存" if self.i18n.get_language() == 'ja' else "Save Settings",
+                     command=self.save_config_settings,
+                     width=200).pack(side="left", padx=5)
+
+        ctk.CTkLabel(scroll_frame,
+                    text="※パスワードは保存されません（セキュリティのため）" if self.i18n.get_language() == 'ja' else "* Password is not saved (for security)",
+                    text_color="gray").pack(pady=(5, 10), anchor="w")
 
     def create_file_selection_tab(self):
         """ファイル選択タブの作成"""

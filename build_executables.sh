@@ -46,17 +46,6 @@ echo ""
 echo "ビルドを開始します..."
 echo ""
 
-# 既存のビルドファイルをクリーンアップ
-if [ -d "build" ]; then
-    echo "既存のbuildディレクトリを削除中..."
-    rm -rf build
-fi
-
-if [ -d "dist" ]; then
-    echo "既存のdistディレクトリを削除中..."
-    rm -rf dist
-fi
-
 # プラットフォームとアーキテクチャの検出
 OS_TYPE=$(uname -s)
 ARCH=$(uname -m)
@@ -83,6 +72,31 @@ fi
 echo "検出されたプラットフォーム: ${PLATFORM_NAME}"
 echo ""
 
+# 既存のビルドファイルをクリーンアップ（現在のプラットフォームのみ）
+if [ -d "build" ]; then
+    echo "既存のbuildディレクトリを削除中..."
+    rm -rf build
+fi
+
+# distディレクトリは残して、現在のプラットフォーム用のファイルのみ削除
+if [ -d "dist" ]; then
+    echo "既存の${PLATFORM_NAME}用ファイルを削除中..."
+    if [ "$OS_TYPE" = "Darwin" ]; then
+        # macOS: .app バンドルを削除
+        rm -rf "dist/EmailBulkSender${SUFFIX}.app"
+        rm -rf "dist/GmailBulkSender${SUFFIX}.app"
+    else
+        # Linux/その他: 実行ファイルを削除
+        rm -f "dist/EmailBulkSender${SUFFIX}"
+        rm -f "dist/GmailBulkSender${SUFFIX}"
+    fi
+    # zipファイルとパッケージディレクトリを削除
+    rm -f "dist/EmailBulkSender${SUFFIX}.zip"
+    rm -f "dist/GmailBulkSender${SUFFIX}.zip"
+    rm -rf "dist/EmailBulkSender${SUFFIX}_package"
+    rm -rf "dist/GmailBulkSender${SUFFIX}_package"
+fi
+
 if [ -f "EmailBulkSender${SUFFIX}.spec" ]; then
     rm "EmailBulkSender${SUFFIX}.spec"
 fi
@@ -93,7 +107,20 @@ fi
 
 echo ""
 echo "1/2: EmailBulkSender${SUFFIX}（汎用版）をビルド中..."
-pyinstaller --onefile --windowed --name="EmailBulkSender${SUFFIX}" email_bulk_sender_gui.py
+if [ "$OS_TYPE" = "Darwin" ]; then
+    # macOS: CustomTkinterとtkinterを含める
+    pyinstaller --onefile --windowed \
+        --name="EmailBulkSender${SUFFIX}" \
+        --collect-all customtkinter \
+        --hidden-import tkinter \
+        --hidden-import _tkinter \
+        --hidden-import tkinter.filedialog \
+        --hidden-import tkinter.messagebox \
+        --osx-bundle-identifier="com.emailbulksender.app" \
+        email_bulk_sender_gui.py
+else
+    pyinstaller --onefile --windowed --name="EmailBulkSender${SUFFIX}" email_bulk_sender_gui.py
+fi
 
 if [ $? -eq 0 ]; then
     echo "✓ EmailBulkSender${SUFFIX}のビルドが完了しました"
@@ -104,7 +131,20 @@ fi
 
 echo ""
 echo "2/2: GmailBulkSender${SUFFIX}（Gmail専用版）をビルド中..."
-pyinstaller --onefile --windowed --name="GmailBulkSender${SUFFIX}" gmail_bulk_sender_gui.py
+if [ "$OS_TYPE" = "Darwin" ]; then
+    # macOS: CustomTkinterとtkinterを含める
+    pyinstaller --onefile --windowed \
+        --name="GmailBulkSender${SUFFIX}" \
+        --collect-all customtkinter \
+        --hidden-import tkinter \
+        --hidden-import _tkinter \
+        --hidden-import tkinter.filedialog \
+        --hidden-import tkinter.messagebox \
+        --osx-bundle-identifier="com.gmailbulksender.app" \
+        gmail_bulk_sender_gui.py
+else
+    pyinstaller --onefile --windowed --name="GmailBulkSender${SUFFIX}" gmail_bulk_sender_gui.py
+fi
 
 if [ $? -eq 0 ]; then
     echo "✓ GmailBulkSender${SUFFIX}のビルドが完了しました"
@@ -130,13 +170,22 @@ mkdir -p "dist/EmailBulkSender${SUFFIX}_package"
 mkdir -p "dist/GmailBulkSender${SUFFIX}_package"
 
 # Copy files for EmailBulkSender package
-cp "dist/EmailBulkSender${SUFFIX}" "dist/EmailBulkSender${SUFFIX}_package/"
+# On macOS, PyInstaller creates .app bundles
+if [ "$OS_TYPE" = "Darwin" ]; then
+    cp -r "dist/EmailBulkSender${SUFFIX}.app" "dist/EmailBulkSender${SUFFIX}_package/"
+else
+    cp "dist/EmailBulkSender${SUFFIX}" "dist/EmailBulkSender${SUFFIX}_package/"
+fi
 cp -r examples "dist/EmailBulkSender${SUFFIX}_package/"
 cp README.md "dist/EmailBulkSender${SUFFIX}_package/"
 cp LICENSE "dist/EmailBulkSender${SUFFIX}_package/"
 
 # Copy files for GmailBulkSender package
-cp "dist/GmailBulkSender${SUFFIX}" "dist/GmailBulkSender${SUFFIX}_package/"
+if [ "$OS_TYPE" = "Darwin" ]; then
+    cp -r "dist/GmailBulkSender${SUFFIX}.app" "dist/GmailBulkSender${SUFFIX}_package/"
+else
+    cp "dist/GmailBulkSender${SUFFIX}" "dist/GmailBulkSender${SUFFIX}_package/"
+fi
 cp -r examples "dist/GmailBulkSender${SUFFIX}_package/"
 cp README.md "dist/GmailBulkSender${SUFFIX}_package/"
 cp LICENSE "dist/GmailBulkSender${SUFFIX}_package/"
@@ -164,10 +213,17 @@ ls -lh dist/*.zip
 echo ""
 echo "プラットフォーム: ${PLATFORM_NAME}"
 echo "作成されたファイル:"
-echo "  - EmailBulkSender${SUFFIX}"
-echo "  - EmailBulkSender${SUFFIX}.zip"
-echo "  - GmailBulkSender${SUFFIX}"
-echo "  - GmailBulkSender${SUFFIX}.zip"
+if [ "$OS_TYPE" = "Darwin" ]; then
+    echo "  - EmailBulkSender${SUFFIX}.app"
+    echo "  - EmailBulkSender${SUFFIX}.zip"
+    echo "  - GmailBulkSender${SUFFIX}.app"
+    echo "  - GmailBulkSender${SUFFIX}.zip"
+else
+    echo "  - EmailBulkSender${SUFFIX}"
+    echo "  - EmailBulkSender${SUFFIX}.zip"
+    echo "  - GmailBulkSender${SUFFIX}"
+    echo "  - GmailBulkSender${SUFFIX}.zip"
+fi
 echo ""
 echo "パッケージ内容:"
 echo "  - 実行ファイル"

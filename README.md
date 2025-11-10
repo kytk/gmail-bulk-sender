@@ -59,6 +59,7 @@ Pythonがインストールされていない環境でも実行可能です。�
 - [セットアップ](#セットアップ)
 - [ファイルの準備](#ファイルの準備)
 - [使い方（CLI版）](#使い方cli版)
+- [設定ファイルの使用](#設定ファイルの使用)
 - [トラブルシューティング](#トラブルシューティング)
 - [注意事項](#注意事項)
 - [よくある質問](#よくある質問)
@@ -80,6 +81,7 @@ Pythonがインストールされていない環境でも実行可能です。�
 - 送信制限対策（送信間隔の自動調整）
 - 送信結果のリアルタイム表示
 - **多言語対応**（日本語・英語の切り替え可能）
+- **設定ファイル対応**（JSON形式で設定を保存・読み込み可能）
 
 ### GUI版の追加機能
 - 視覚的で直感的な操作インターフェース
@@ -303,6 +305,114 @@ Reply-To: reply@example.com
 [4/4] 送信成功: サンプル株式会社 田中美咲 (tanaka@example.com)
 
 送信完了: 成功 4件, 失敗 0件
+```
+
+## 設定ファイルの使用
+
+### 概要
+
+バージョン2.1から、設定をJSON形式のファイルに保存・読み込みできるようになりました。これにより、スクリプトを編集せずに設定を管理できます。
+
+**主な特徴：**
+- スクリプトの`DEFAULT_*`変数を編集する必要がなくなります
+- GUI/CLIの両方から設定を保存・読み込み可能
+- テキストエディタでJSONファイルを直接編集することも可能
+- パスワードは保存されません（セキュリティのため）
+
+### 設定ファイルの場所
+
+- **汎用版**: `~/.email_bulk_sender/config.json`
+- **Gmail版**: `~/.gmail_bulk_sender/config.json`
+
+（`~`はユーザーのホームディレクトリを表します）
+
+### CLI版での使用方法
+
+#### 設定の保存
+
+```bash
+# 設定を入力して保存
+python email_bulk_sender.py --save-config
+
+# Gmail版の場合
+python gmail_bulk_sender.py --save-config
+```
+
+初回実行時に設定を入力すると、設定ファイルに保存されます。
+
+#### 設定の読み込み
+
+設定ファイルが存在する場合、自動的に読み込まれます：
+
+```bash
+# 設定ファイルがあれば自動的に読み込まれます
+python email_bulk_sender.py
+
+# 明示的に読み込みを指定することも可能
+python email_bulk_sender.py --load-config
+```
+
+設定ファイルに保存されていない項目（例：パスワード）のみ入力を求められます。
+
+### GUI版での使用方法
+
+GUI版では、基本設定タブに「設定管理」セクションがあります：
+
+1. **設定を保存**
+   - 現在入力されている設定を設定ファイルに保存
+   - 「設定を保存」ボタンをクリック
+   - パスワードは保存されません
+
+2. **設定を読み込み**
+   - 保存された設定を読み込む
+   - 「設定を読み込み」ボタンをクリック
+   - すべてのフィールドに設定が反映されます
+
+### 設定ファイルの形式
+
+設定ファイルはJSON形式です。テキストエディタで直接編集することもできます：
+
+```json
+{
+  "version": "2.0",
+  "smtp": {
+    "server": "smtp.gmail.com",
+    "port": 587
+  },
+  "sender": {
+    "email_address": "your.email@gmail.com",
+    "display_name": "株式会社サンプル 営業部"
+  },
+  "files": {
+    "csv_file": "list.csv",
+    "template_file": "body.txt",
+    "attachments": ["file1.pdf", "file2.docx"]
+  },
+  "email_options": {
+    "cc": "cc@example.com",
+    "bcc": "",
+    "reply_to": "reply@example.com",
+    "send_delay": 5
+  },
+  "ui": {
+    "language": "ja"
+  }
+}
+```
+
+**注意**: パスワードはセキュリティ上の理由から設定ファイルに保存されません。毎回入力する必要があります。
+
+### 複数の設定を使い分ける
+
+設定ファイルをコピーして、異なる用途で使い分けることができます：
+
+```bash
+# 設定ファイルをバックアップ
+cp ~/.email_bulk_sender/config.json ~/.email_bulk_sender/config_work.json
+cp ~/.email_bulk_sender/config.json ~/.email_bulk_sender/config_personal.json
+
+# 必要に応じて設定を入れ替え
+cp ~/.email_bulk_sender/config_work.json ~/.email_bulk_sender/config.json
 ```
 
 ## トラブルシューティング
@@ -547,6 +657,7 @@ python gmail_bulk_sender_gui.py
    - SMTPサーバー情報（汎用版）またはGmailアカウント情報（Gmail版）を入力
    - メールアドレスとパスワードを入力
    - 送信元表示名を入力（オプション）
+   - **設定管理**: 「設定を保存」または「設定を読み込み」ボタンで設定を管理できます
 
 2. **ファイル選択タブ**
    - 「ファイル選択」ボタンをクリックして、受信者リストCSVファイルを選択
@@ -686,8 +797,9 @@ zipファイルを配布すれば、受け取った人は解凍してすぐに�
 
 ---
 
-**作成日**: 2025年9月  
-**バージョン**: 1.0
+**作成日**: 2025年9月
+**更新日**: 2025年11月
+**バージョン**: 2.1（設定ファイル機能追加）
 
 ---
 
@@ -752,6 +864,7 @@ The following documentation primarily covers the CLI version. For GUI version us
 - [Setup](#setup)
 - [File Preparation](#file-preparation)
 - [Usage (CLI Version)](#usage-cli-version)
+- [Using Configuration Files](#using-configuration-files)
 - [GUI Version Usage](#gui-version-usage)
 - [Standalone Executable Creation](#standalone-executable-creation)
 - [Troubleshooting](#troubleshooting)
@@ -771,6 +884,7 @@ The following documentation primarily covers the CLI version. For GUI version us
 - Rate limiting protection (automatic sending interval adjustment)
 - Real-time sending status display
 - **Multi-language support** (Japanese/English switchable)
+- **Configuration file support** (Save and load settings in JSON format)
 
 ### Additional GUI Features
 - Visual and intuitive interface
@@ -993,6 +1107,114 @@ Type `yes` to begin sending:
 [4/4] 送信成功: サンプル株式会社 田中美咲 (tanaka@example.com)
 
 送信完了: 成功 4件, 失敗 0件
+```
+
+## Using Configuration Files
+
+### Overview
+
+Starting from version 2.1, you can save and load settings in JSON format. This allows you to manage settings without editing scripts.
+
+**Key Features:**
+- No need to edit `DEFAULT_*` variables in scripts
+- Save and load settings from both GUI and CLI
+- Directly edit JSON files with a text editor
+- Passwords are not saved (for security)
+
+### Configuration File Locations
+
+- **Generic version**: `~/.email_bulk_sender/config.json`
+- **Gmail version**: `~/.gmail_bulk_sender/config.json`
+
+(`~` represents the user's home directory)
+
+### CLI Version Usage
+
+#### Saving Settings
+
+```bash
+# Enter and save settings
+python email_bulk_sender.py --save-config
+
+# For Gmail version
+python gmail_bulk_sender.py --save-config
+```
+
+When you run for the first time and enter settings, they will be saved to the configuration file.
+
+#### Loading Settings
+
+If a configuration file exists, it will be loaded automatically:
+
+```bash
+# Automatically loads if config file exists
+python email_bulk_sender.py
+
+# You can also explicitly specify loading
+python email_bulk_sender.py --load-config
+```
+
+You will only be prompted for items not saved in the configuration file (e.g., password).
+
+### GUI Version Usage
+
+In the GUI version, there is a "Configuration Management" section in the Basic Settings tab:
+
+1. **Save Settings**
+   - Saves currently entered settings to the configuration file
+   - Click the "Save Settings" button
+   - Passwords are not saved
+
+2. **Load Settings**
+   - Loads saved settings
+   - Click the "Load Settings" button
+   - All fields will be populated with the saved settings
+
+### Configuration File Format
+
+The configuration file is in JSON format. You can edit it directly with a text editor:
+
+```json
+{
+  "version": "2.0",
+  "smtp": {
+    "server": "smtp.gmail.com",
+    "port": 587
+  },
+  "sender": {
+    "email_address": "your.email@gmail.com",
+    "display_name": "Sample Corp Sales Dept"
+  },
+  "files": {
+    "csv_file": "list.csv",
+    "template_file": "body.txt",
+    "attachments": ["file1.pdf", "file2.docx"]
+  },
+  "email_options": {
+    "cc": "cc@example.com",
+    "bcc": "",
+    "reply_to": "reply@example.com",
+    "send_delay": 5
+  },
+  "ui": {
+    "language": "en"
+  }
+}
+```
+
+**Note**: Passwords are not saved in the configuration file for security reasons. You need to enter them each time.
+
+### Using Multiple Configurations
+
+You can copy the configuration file to use different settings for different purposes:
+
+```bash
+# Backup configuration files
+cp ~/.email_bulk_sender/config.json ~/.email_bulk_sender/config_work.json
+cp ~/.email_bulk_sender/config.json ~/.email_bulk_sender/config_personal.json
+
+# Switch configurations as needed
+cp ~/.email_bulk_sender/config_work.json ~/.email_bulk_sender/config.json
 ```
 
 ## Troubleshooting
@@ -1237,6 +1459,7 @@ python gmail_bulk_sender_gui.py
    - Enter SMTP server information (generic version) or Gmail account information (Gmail version)
    - Enter email address and password
    - Enter sender display name (optional)
+   - **Configuration Management**: Use "Load Settings" or "Save Settings" buttons to manage your settings
 
 2. **File Selection Tab**
    - Click "File Selection" button to select recipient list CSV file
@@ -1377,5 +1600,5 @@ For issues or questions, please create an Issue.
 ---
 
 **Created**: 23 September 2025
-**Updated**: 5 November 2025
-**Version**: 2.0 (GUI版追加)
+**Updated**: 9 November 2025
+**Version**: 2.1 (Configuration file support added)
